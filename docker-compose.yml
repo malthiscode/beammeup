@@ -46,7 +46,8 @@ services:
       - ./beammp-config:/beammp
     networks:
       - beammeup
-    # Wait for config file to be set up before starting
+    depends_on:
+      - backend
     healthcheck:
       test: ["CMD", "test", "-f", "/beammp/ServerConfig.toml"]
       interval: 5s
