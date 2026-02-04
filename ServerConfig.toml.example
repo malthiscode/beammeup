@@ -1,23 +1,63 @@
-# BeamMP Server Configuration
-# This file is managed by BeamMeUp admin panel
+# This is the BeamMP-Server config file.
+# Help & Documentation: https://docs.beammp.com/server/server-maintenance/
+# IMPORTANT: Fill in the AuthKey with the key you got from https://keymaster.beammp.com/ on the left under "Keys"
 
 [General]
-Port = 3001
+# Server port (default: 30814)
+Port = 30814
+
+# AuthKey has to be filled out in order to run the server
+# Get your key from: https://keymaster.beammp.com/
+AuthKey = "CHANGE_ME_TO_YOUR_BEAMMP_AUTH_KEY"
+
+# Whether to allow guests to join without an account
 AllowGuests = false
+
+# Whether to log chat messages in the console / log
 LogChat = true
+
+# Debug mode (set to true for detailed logging)
 Debug = false
-IP = "0.0.0.0"
+
+# The IP address to bind the server to
+# Use "::" for IPv6 or "0.0.0.0" for IPv4
+IP = "::"
+
+# Whether the server is private (not shown in public server list)
 Private = false
-InformationPacket = 0
-Name = "BeamMP Server"
-Tags = ["racing", "drifting"]
-MaxCars = 1
-MaxPlayers = 32
-Map = "/levels/gridmap/info.json"
-Description = "A fun BeamMP server"
-ResourceFolder = "/beammp/Resources"
-AuthKey = "your-auth-key-here"
+
+# Whether to allow unconnected clients to get public server information without joining
+InformationPacket = true
+
+# Server name displayed in server browser
+Name = "BeamMP Admin Panel Server"
+
+# Add custom identifying tags to help players find your server
+# Format: TagA,TagB,TagC (comma-separated, no spaces after commas)
+Tags = "Freeroam"
+
+# Maximum number of vehicles allowed on server
+MaxCars = 4
+
+# Maximum number of concurrent players
+MaxPlayers = 8
+
+# Map to load
+# Format: /levels/map_name/info.json
+Map = "/levels/hirochi_raceway/info.json"
+
+# Server description shown in browser
+Description = "BeamMP server running on BeamMP Admin Panel"
+
+# Resource folder containing mods and custom content
+ResourceFolder = "Resources"
 
 [Misc]
+# Hides the periodic update message notifying of new server version
+# Note: Update messages always appear at startup regardless of this setting
 ImScaredOfUpdates = false
-UpdateReminderTime = 3600
+
+# Time between update reminders
+# Format: Use "s" (seconds), "min" (minutes), "h" (hours), or "d" (days)
+# Examples: "30s", "0.5min", "1h", "1d"
+UpdateReminderTime = "7d"
