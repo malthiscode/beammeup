@@ -13,7 +13,6 @@
     "strictBindCallApply": false,
     "strictPropertyInitialization": false,
     "noImplicitReturns": false,
-    "suppressImplicitAnyIndexErrors": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
