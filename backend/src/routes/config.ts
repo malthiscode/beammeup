@@ -13,7 +13,7 @@ export async function configRoutes(fastify: FastifyInstance) {
       await requireAuth(request, reply);
 
       const user = await prisma.user.findUnique({
-        where: { id: request.user?.sub },
+        where: { id: (request.user as any)?.sub },
       });
 
       if (!user) {
@@ -28,7 +28,7 @@ export async function configRoutes(fastify: FastifyInstance) {
         'config',
         undefined,
         {},
-        request.auditContext?.ipAddress
+        (request as any).auditContext?.ipAddress
       );
 
       // Never expose AuthKey
@@ -64,7 +64,7 @@ export async function configRoutes(fastify: FastifyInstance) {
       await requireAuth(request, reply);
 
       const user = await prisma.user.findUnique({
-        where: { id: request.user?.sub },
+        where: { id: (request.user as any)?.sub },
       });
 
       if (!user || !['OWNER', 'ADMIN', 'OPERATOR'].includes(user.role)) {
@@ -107,13 +107,13 @@ export async function configRoutes(fastify: FastifyInstance) {
   // Replace AuthKey (Owner/Admin only - requires password re-auth)
   fastify.post(
     '/authkey-replace',
-    { preHandler: csrfProtection, rateLimit: { max: 3, timeWindow: '1 hour' } },
+    { preHandler: csrfProtection, rateLimit: { max: 3, timeWindow: '1 hour' } } as any,
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         await requireAuth(request, reply);
 
         const user = await prisma.user.findUnique({
-          where: { id: request.user?.sub },
+          where: { id: (request.user as any)?.sub },
         });
 
         if (!user || !['OWNER', 'ADMIN'].includes(user.role)) {

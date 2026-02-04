@@ -35,8 +35,8 @@ export async function auditRoutes(fastify: FastifyInstance) {
           },
         },
         orderBy: { createdAt: 'desc' },
-        take: parseInt(limit, 10) || 100,
-        skip: parseInt(offset, 10) || 0,
+        take: parseInt(String(limit), 10) || 100,
+        skip: parseInt(String(offset), 10) || 0,
       });
 
       const total = await prisma.auditLog.count({ where });
@@ -44,8 +44,8 @@ export async function auditRoutes(fastify: FastifyInstance) {
       reply.code(200).send({
         logs,
         total,
-        limit: parseInt(limit, 10) || 100,
-        offset: parseInt(offset, 10) || 0,
+        limit: parseInt(String(limit), 10) || 100,
+        offset: parseInt(String(offset), 10) || 0,
       });
     } catch (error) {
       reply.code(500).send({ error: 'Failed to fetch audit logs' });
@@ -58,7 +58,7 @@ export async function auditRoutes(fastify: FastifyInstance) {
       await requireAuth(request, reply);
 
       const user = await prisma.user.findUnique({
-        where: { id: request.user?.sub },
+        where: { id: (request.user as any)?.sub },
       });
 
       if (!user || !['OWNER', 'ADMIN'].includes(user.role)) {

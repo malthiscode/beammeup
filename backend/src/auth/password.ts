@@ -4,7 +4,7 @@ const ARGON2_OPTIONS = {
   timeCost: parseInt(process.env.ARGON2_TIME_COST || '3', 10),
   memoryCost: parseInt(process.env.ARGON2_MEMORY_COST || '65536', 10),
   parallelism: parseInt(process.env.ARGON2_PARALLELISM || '4', 10),
-  type: 2, // id variant
+  type: 2 as any, // id variant
 };
 
 export async function hashPassword(password: string): Promise<string> {

@@ -15,7 +15,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Login
   fastify.post(
     '/login',
-    { preHandler: csrfProtection, rateLimit: { max: 5, timeWindow: '15 minutes' } },
+    { preHandler: csrfProtection, rateLimit: { max: 5, timeWindow: '15 minutes' } } as any,
     async (request: FastifyRequest, reply: FastifyReply) => {
       const payload = request.body as any;
       const errors = validateLoginRequest(payload);
@@ -86,7 +86,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         await request.jwtVerify();
-        const userId = request.user?.sub;
+        const userId = (request.user as any)?.sub;
 
         if (userId) {
           // Delete all sessions for this user

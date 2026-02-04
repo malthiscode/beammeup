@@ -35,7 +35,7 @@ export async function serverRoutes(fastify: FastifyInstance) {
         await requireAuth(request, reply);
 
         const user = await prisma.user.findUnique({
-          where: { id: request.user?.sub },
+          where: { id: (request.user as any)?.sub },
         });
 
         if (!user || !['OWNER', 'ADMIN', 'OPERATOR'].includes(user.role)) {
@@ -67,7 +67,7 @@ export async function serverRoutes(fastify: FastifyInstance) {
       await requireAuth(request, reply);
 
       const user = await prisma.user.findUnique({
-        where: { id: request.user?.sub },
+        where: { id: (request.user as any)?.sub },
       });
 
       if (!user) {
@@ -75,7 +75,7 @@ export async function serverRoutes(fastify: FastifyInstance) {
       }
 
       const containerName = process.env.BEAMMP_CONTAINER_NAME || 'beammp';
-      const lines = Math.min(parseInt(request.query.lines as string) || 200, 1000); // Cap at 1000
+      const lines = Math.min(parseInt((request.query as any).lines as string) || 200, 1000); // Cap at 1000
       const logs = await getContainerLogs(containerName, lines);
 
       await logAuditAction(

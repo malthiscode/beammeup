@@ -30,7 +30,7 @@
     "adm-zip": "^0.5.14",
     "argon2": "^0.31.2",
     "fastify": "^4.28.1",
-    "toml": "^3.0.0"
+    "@iarna/toml": "^2.2.5"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.4.34",

@@ -8,8 +8,8 @@ export async function auditLogger(
   // Store request info for later use in response handler
   const startTime = Date.now();
   
-  request.auditContext = {
-    userId: request.user?.sub,
+  (request as any).auditContext = {
+    userId: (request.user as any)?.sub,
     ipAddress: request.ip,
     userAgent: request.headers['user-agent'],
     method: request.method,
@@ -17,7 +17,7 @@ export async function auditLogger(
   };
 
   // Hook into the response to log sensitive actions
-  reply.addHook('onResponse', async () => {
+  (reply as any).addHook('onResponse', async () => {
     const duration = Date.now() - startTime;
     if (duration > 5000) {
       request.log.warn(`Slow request: ${request.method} ${request.url} (${duration}ms)`);

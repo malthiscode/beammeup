@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import * as TOML from 'toml';
+import * as TOML from '@iarna/toml';
 import { randomBytes } from 'crypto';
 
 const CONFIG_PATH = process.env.BEAMMP_CONFIG_PATH || '/beammp/ServerConfig.toml';

@@ -3,7 +3,7 @@ import { formatErrorForLogging, sanitizeForLogging } from '../lib/sanitize.js';
 
 interface AppError extends FastifyError {
   statusCode?: number;
-  code?: string;
+  code: string;
 }
 
 export async function errorHandler(

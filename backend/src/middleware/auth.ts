@@ -19,7 +19,7 @@ export async function requireRole(
     await requireAuth(request, reply);
 
     const user = await prisma.user.findUnique({
-      where: { id: request.user?.sub },
+      where: { id: (request.user as any)?.sub },
     });
 
     if (!user || !allowedRoles.includes(user.role)) {

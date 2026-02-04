@@ -22,13 +22,13 @@ export async function modsRoutes(fastify: FastifyInstance) {
   // Upload mod (Owner/Admin only)
   fastify.post(
     '/upload',
-    { preHandler: csrfProtection, rateLimit: { max: 10, timeWindow: '1 hour' } },
+    { preHandler: csrfProtection, rateLimit: { max: 10, timeWindow: '1 hour' } } as any,
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         await requireAuth(request, reply);
 
         const user = await prisma.user.findUnique({
-          where: { id: request.user?.sub },
+          where: { id: (request.user as any)?.sub },
         });
 
         if (!user || !['OWNER', 'ADMIN'].includes(user.role)) {
@@ -70,7 +70,7 @@ export async function modsRoutes(fastify: FastifyInstance) {
         await requireAuth(request, reply);
 
         const user = await prisma.user.findUnique({
-          where: { id: request.user?.sub },
+          where: { id: (request.user as any)?.sub },
         });
 
         if (!user || !['OWNER', 'ADMIN'].includes(user.role)) {
