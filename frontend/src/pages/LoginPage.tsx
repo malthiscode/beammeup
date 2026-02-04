@@ -15,7 +15,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await api.login(username, password);
+      await api.login(username, password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed');
