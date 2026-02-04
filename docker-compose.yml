@@ -18,7 +18,7 @@ services:
       DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
     volumes:
       - ./data:/app/data
-      - /beammp:/beammp
+      - ./beammp-config:/beammp
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - beammeup
@@ -43,7 +43,7 @@ services:
     ports:
       - "30814:30814"
     volumes:
-      - /beammp:/beammp
+      - ./beammp-config:/beammp
     networks:
       - beammeup
 

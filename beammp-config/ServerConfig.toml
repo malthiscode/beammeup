@@ -1,0 +1,23 @@
+# BeamMP Server Configuration Template
+# Edit this file and set your AuthKey before starting the server
+
+[General]
+# Your BeamMP authorization key (get one at https://beammp.com/keymaster)
+# This is REQUIRED - the server will not start without it
+AuthKey = "CHANGE_ME_TO_YOUR_BEAMMP_AUTH_KEY"
+
+# Maximum number of concurrent players
+MaxPlayers = 32
+
+# Debug mode (set to true for detailed logging)
+Debug = false
+
+[Misc]
+# Log level: Debug, Info, Warning, Error
+LogLevel = "Info"
+
+# Description shown in server browser
+Description = "BeamMP Admin Panel Server"
+
+# Tags for filtering in server browser
+Tags = ""
