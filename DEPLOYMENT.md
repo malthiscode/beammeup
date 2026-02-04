@@ -20,10 +20,12 @@
   NODE_ENV=production
   SESSION_SECRET=<your-32-byte-random-secret>
   FASTIFY_PORT=3000
+  BEAMMP_IMAGE=beammp/beammp-server:latest  # Required only if running BeamMP container
+  BEAMMP_TOKEN=  # Required only if running BeamMP container
   ```
 
 - [ ] **HTTPS Configuration**
-  - Set up Caddy or Nginx with SSL
+  - Set up Caddy with SSL
   - Use Let's Encrypt (automatic renewal)
   - Enforce HTTPS redirect
 
@@ -59,14 +61,14 @@
   ```
 
 - [ ] **Network Isolation**
-  - Only expose port 8088/443 to public
+  - Only expose port 80/443 to public (Caddy)
   - Restrict SSH to admin IPs
   - Use firewall rules
 
 - [ ] **Health Monitoring**
   ```bash
   # Monitor endpoint (Operator+ access)
-  curl http://localhost:8088/api/diagnostics/health
+  curl http://localhost:8200/api/diagnostics/health
   ```
 
 ---
@@ -79,7 +81,8 @@
 - Docker & Docker Compose v2.20+
 - 2GB RAM available
 - 100MB+ disk space
-- Port 8088 available (default)
+- Ports 8200/8201 available (backend/frontend)
+- Ports 8200/8201 available (backend/frontend)
 ```
 
 ### 2. Environment Setup
@@ -105,6 +108,9 @@ nano .env
 # Build and start all services
 docker compose up -d --build
 
+# Optional: start BeamMP container (requires BEAMMP_IMAGE + BEAMMP_TOKEN)
+docker compose --profile beammp up -d
+
 # Wait for initialization
 sleep 10
 
@@ -114,12 +120,12 @@ docker compose ps
 # Check logs
 docker compose logs -f backend
 
-# Access at http://localhost:8088
+# Access at http://localhost:8201 (or your Caddy domain)
 ```
 
 ### 4. First-Run Setup
 
-- Navigate to http://localhost:8088
+- Navigate to http://localhost:8201 (or your Caddy domain)
 - Create Owner account
 - Log in with your credentials
 - Configure BeamMP via Config tab
@@ -160,6 +166,8 @@ cat > .env << EOF
 NODE_ENV=production
 SESSION_SECRET=$SESSION_SECRET
 FASTIFY_PORT=3000
+BEAMMP_IMAGE=beammp/beammp-server:latest
+BEAMMP_TOKEN=
 EOF
 
 # Secure permissions
@@ -373,7 +381,7 @@ sudo caddy renew --force
 #!/bin/bash
 # /app/beammeup/monitor.sh
 
-HEALTH=$(curl -s http://localhost:8088/api/diagnostics/health)
+HEALTH=$(curl -s http://localhost:8200/api/diagnostics/health)
 DATABASE=$(echo $HEALTH | jq -r '.database.connected // false')
 
 if [ "$DATABASE" != "true" ]; then
@@ -504,7 +512,7 @@ tar -xzf /backups/beammeup-*.tar.gz
 docker compose up -d --build
 
 # Verify
-curl http://localhost:8088/api/diagnostics/health
+curl http://localhost:8200/api/diagnostics/health
 ```
 
 ### Database Corruption Recovery
@@ -524,7 +532,7 @@ rm -rf backend/prisma/migrations
 # 4. Start (will regenerate schema)
 docker compose up -d --build
 
-# 5. Create new Owner at http://localhost:8088
+# 5. Create new Owner at http://localhost:8201 (or your Caddy domain)
 ```
 
 ---
@@ -599,7 +607,7 @@ docker compose restart backend
 ```bash
 # 1. Export audit logs immediately
 curl -H "Authorization: Bearer $ADMIN_TOKEN" \
-  http://localhost:8088/api/audit/export > audit-$(date +%s).csv
+  http://localhost:8200/api/audit/export > audit-$(date +%s).csv
 
 # 2. Change all user passwords (via UI)
 # Admin > Users > Edit each user
@@ -659,9 +667,9 @@ WHERE "createdAt" < datetime('now', '-1 year');
 ### Port Already in Use
 
 ```bash
-# Check what's using 8088
-lsof -i :8088  # macOS/Linux
-netstat -anbo | findstr :8088  # Windows
+# Check what's using ports
+lsof -i :8200  # Backend
+lsof -i :8201  # Frontend
 
 # Change port in docker-compose.yml:
 ports:
@@ -730,7 +738,7 @@ sudo systemctl restart caddy
 **Get Help:**
 1. Check README > Troubleshooting section
 2. Review container logs: `docker compose logs -f`
-3. Export diagnostics: `curl http://localhost:8088/api/diagnostics/export`
+3. Export diagnostics: `curl http://localhost:8200/api/diagnostics/export`
 4. Create issue with diagnostics output
 
 ---
@@ -786,39 +794,35 @@ ARGON2_MEMORY_COST=131072  # 128MB
 ARGON2_PARALLELISM=8
 ```
 
-### 2. HTTPS/TLS
+### 2. HTTPS/TLS (Caddy)
 
-**Generate self-signed certificate:**
+**Caddy handles TLS automatically (Let's Encrypt):**
 
-```bash
-mkdir -p certs
-openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem \
-  -out certs/cert.pem -days 365 -nodes
-```
+```caddyfile
+admin.beammp.example.com {
+  # Security headers
+  header * {
+    X-Frame-Options "DENY"
+    X-Content-Type-Options "nosniff"
+    X-XSS-Protection "1; mode=block"
+    Referrer-Policy "no-referrer"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  }
 
-**Update nginx.conf:**
+  # API routes
+  handle /api/* {
+    reverse_proxy localhost:8200
+  }
 
-```nginx
-server {
-    listen 443 ssl http2;
-    ssl_certificate /etc/nginx/certs/cert.pem;
-    ssl_certificate_key /etc/nginx/certs/key.pem;
-    
-    # Additional SSL security
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
-    
-    add_header Strict-Transport-Security "max-age=31536000" always;
+  # Frontend (SPA)
+  handle {
+    reverse_proxy localhost:8201
+  }
 }
 ```
 
-**Update docker-compose.yml volumes:**
-
-```yaml
-nginx:
-  volumes:
-    - ./certs:/etc/nginx/certs:ro
+```bash
+sudo caddy reload -c /etc/caddy/Caddyfile
 ```
 
 ### 3. Backups
@@ -919,13 +923,7 @@ services:
     environment:
       INSTANCE_ID: 3
   
-  nginx:
-    # Routes to all backend instances
-    upstream backend {
-        server backend-1:3000;
-        server backend-2:3000;
-        server backend-3:3000;
-    }
+  # Use an external reverse proxy (Caddy) for load balancing
 ```
 
 **Shared database:**

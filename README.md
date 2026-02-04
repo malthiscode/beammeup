@@ -61,7 +61,7 @@ A production-ready, fully Dockerized web admin panel for managing a BeamMP game 
 
 ✅ **Docker & Portability**
 - Complete docker-compose setup
-- Single port entry (8088 on localhost)
+- External reverse proxy via Caddy (single port entry on 80/443)
 - Works out-of-the-box with `docker compose up -d --build`
 - Windows Docker Desktop support (WSL2 / npipe)
 - macOS/Linux native support
@@ -129,6 +129,8 @@ SESSION_SECRET=<your-secure-32-byte-secret>
 FASTIFY_PORT=3000
 DATABASE_URL=file:/app/data/beammeup.sqlite
 REDIS_URL=  # Optional, leave empty for in-memory rate limiting
+BEAMMP_IMAGE=beammp/beammp-server:latest  # Required only if running BeamMP container
+BEAMMP_TOKEN=  # BeamMP auth token (required if running BeamMP container)
 ```
 
 #### Docker Ports
@@ -136,15 +138,19 @@ REDIS_URL=  # Optional, leave empty for in-memory rate limiting
 The stack exposes unique ports to avoid conflicts:
 - Backend API: **localhost:8200**
 - Frontend UI: **localhost:8201**
-- BeamMP Server: **30814** (game server port)
+- BeamMP Server: **30814** (game server port, only if BeamMP profile is enabled)
 
 You'll use Caddy to reverse proxy backend/frontend on a single port (80/443).
 
 ### 3. Start the Stack
 
 ```bash
-# Build and start all containers
+# Build and start BeamMeUp (UI + API)
 docker compose up -d --build
+
+# Optional: start BeamMP server container
+# (requires BEAMMP_IMAGE and BEAMMP_TOKEN in .env)
+docker compose --profile beammp up -d
 
 # Wait for startup (20-30 seconds)
 sleep 5
@@ -193,7 +199,12 @@ You'll be redirected to the setup page:
    ```bash
    cd beammeup
    docker compose up -d --build
-   # Access at http://localhost:8088
+    # Access UI at http://localhost:8201
+    # Access API at http://localhost:8200
+
+    # Optional: start BeamMP container
+    # (requires BEAMMP_IMAGE and BEAMMP_TOKEN in .env)
+    docker compose --profile beammp up -d
    ```
 
 ### Npipe Backend (Legacy)
@@ -328,7 +339,7 @@ rm ./backend/prisma/migrations -rf
 docker compose up -d --build
 # Migrations run automatically on startup
 
-# Create new Owner account at http://localhost:8088
+# Create new Owner account at http://localhost:8201 (or your Caddy domain)
 ```
 
 ## Troubleshooting
@@ -412,7 +423,7 @@ docker compose logs backend | grep -i upload
 
 ### Network
 
-- ✅ Only port 8088 exposed to localhost
+- ✅ Only ports 8200/8201 exposed to localhost (Caddy handles 80/443)
 - ✅ Reverse proxy handles CORS
 - ✅ X-Frame-Options: DENY (no iframes)
 - ✅ CSP headers enabled (Fastify Helmet)
@@ -440,7 +451,7 @@ docker compose logs backend | grep -i upload
 
 ```bash
 # API endpoint (Operator+ access)
-curl http://localhost:8088/api/diagnostics/health
+curl http://localhost:8200/api/diagnostics/health
 
 # Returns:
 {
@@ -618,7 +629,7 @@ ISC - See LICENSE file
 
 **Infrastructure:**
 - Docker & Docker Compose
-- Nginx (reverse proxy)
+- Caddy (reverse proxy, external)
 
 ## Quick Start
 
@@ -658,10 +669,9 @@ docker compose up -d --build
 ```
 
 This will:
-- Build and start the backend (Port 3000)
-- Build and start the frontend
-- Start nginx proxy (Port 80)
-- Start BeamMP container (if image exists)
+- Build and start the backend (Port 8200)
+- Build and start the frontend (Port 8201)
+- Start BeamMP container only if profile enabled
 
 4. **Initialize database**
 
@@ -671,7 +681,7 @@ docker exec beammeup-backend npx prisma migrate deploy
 
 5. **Access the app**
 
-Open http://localhost in your browser
+Open http://localhost:8201 in your browser (or your Caddy domain)
 
 6. **First-run setup**
 
@@ -1011,7 +1021,7 @@ docker compose up -d --build
 ### Health Check
 
 ```bash
-curl http://localhost/health
+curl http://localhost:8200/health
 # { "status": "ok" }
 ```
 
@@ -1019,7 +1029,7 @@ curl http://localhost/health
 
 Inside containers:
 - Backend: stdout via Docker logs
-- Frontend: Access logs via nginx
+- Frontend: stdout via Docker logs
 - Database: SQLite file at `/app/data/beammeup.db`
 
 ### Audit Trail
@@ -1069,7 +1079,7 @@ Standard config update endpoint filters out AuthKey.
 
 - SQLite optimized with indexes on audit logs
 - JWT tokens cached in browser
-- Nginx gzip compression enabled
+- Caddy compression enabled (if configured)
 - Reverse proxy caching for static assets
 - Database connection pooling via Prisma
 
@@ -1101,9 +1111,9 @@ docker compose up -d
 ### Hardening Checklist
 
 - [ ] Change SESSION_SECRET to secure random value
-- [ ] Use HTTPS/TLS (add to nginx.conf)
+- [ ] Use HTTPS/TLS (configure Caddy)
 - [ ] Set NODE_ENV=production
-- [ ] Run health checks: `curl http://localhost/health`
+- [ ] Run health checks: `curl http://localhost:8200/health`
 - [ ] Configure log rotation
 - [ ] Set up monitoring/alerts
 - [ ] Regular backup schedule
@@ -1112,18 +1122,12 @@ docker compose up -d
 
 ### SSL/TLS Setup
 
-Add to `docker-compose.yml` volumes:
-```yaml
-volumes:
-  - ./certs/cert.pem:/etc/nginx/certs/cert.pem
-  - ./certs/key.pem:/etc/nginx/certs/key.pem
-```
+Configure TLS in your Caddyfile (recommended):
 
-Update `nginx.conf`:
-```nginx
-listen 443 ssl http2;
-ssl_certificate /etc/nginx/certs/cert.pem;
-ssl_certificate_key /etc/nginx/certs/key.pem;
+```caddyfile
+admin.beammp.example.com {
+        reverse_proxy localhost:8201
+}
 ```
 
 ## License

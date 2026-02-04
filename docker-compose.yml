@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend API
   backend:
@@ -22,8 +20,6 @@ services:
       - ./data:/app/data
       - /beammp:/beammp
       - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - beammp
     networks:
       - beammeup
 
@@ -42,7 +38,9 @@ services:
 
   # BeamMP server
   beammp:
-    image: beammp:latest
+    profiles:
+      - beammp
+    image: ${BEAMMP_IMAGE:-beammp/beammp-server:latest}
     container_name: beammp
     ports:
       - "30814:30814"

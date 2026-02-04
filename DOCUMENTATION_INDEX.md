@@ -213,14 +213,14 @@
 1. Check [README.md](README.md) Troubleshooting
 2. Check [DEPLOYMENT.md](DEPLOYMENT.md) Troubleshooting
 3. Review Docker logs: `docker compose logs -f`
-4. Check health endpoint: `curl http://localhost/health`
+4. Check health endpoint: `curl http://localhost:8200/health`
 5. Search source code for relevant component
 
 ### Scaling to Multiple Instances
 1. Read [DEPLOYMENT.md](DEPLOYMENT.md) Scaling section
 2. Read [ARCHITECTURE.md](ARCHITECTURE.md) Scalability section
 3. Update docker-compose.yml with multiple backends
-4. Configure load balancer (nginx upstream)
+4. Configure load balancer (Caddy or external proxy)
 5. Update database URL to shared instance
 
 ---
@@ -237,7 +237,6 @@
 **Configuration**
 - `.env.example` - Environment template
 - `docker-compose.yml` - Container orchestration
-- `nginx.conf` - Reverse proxy config
 - `backend/tsconfig.json` - Backend TS config
 - `frontend/tsconfig.json` - Frontend TS config
 

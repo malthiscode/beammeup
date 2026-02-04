@@ -238,7 +238,7 @@
 - [x] **docker-compose.yml**
   - Backend service (Fastify)
   - Frontend service (React + serve)
-  - Nginx reverse proxy
+  - External Caddy reverse proxy (user-managed)
   - BeamMP container reference
   - Shared volumes for config and mods
   - Network configuration
@@ -250,14 +250,13 @@
   - Small final images
   - Health check integration
 
-- [x] **Nginx Configuration**
+- [x] **Caddy Configuration (External)**
   - Reverse proxy for both frontend and backend
-  - SSL/TLS support (with example config)
+  - SSL/TLS auto-managed by Caddy
   - API routing to backend
   - SPA routing fallback for frontend
   - Security headers (HSTS, X-Frame-Options, etc.)
-  - Gzip compression
-  - 100MB upload limit
+  - Compression if configured in Caddy
 
 #### Environment Management
 - [x] **.env.example** with all required variables
@@ -423,7 +422,7 @@
 6. **Dockerized & Portable**
    - [x] BeamMP runs in Docker ✓
    - [x] Backend + frontend in Docker ✓
-   - [x] Nginx edge proxy (single port) ✓
+  - [x] External Caddy reverse proxy (single port) ✓
    - [x] Windows Docker Desktop support (npipe) ✓
    - [x] Container restart via Docker API ✓
 
@@ -442,7 +441,7 @@
 ### Files Created
 - **Backend:** 18 files (source code, tests, config)
 - **Frontend:** 14 files (pages, components, styles, config)
-- **Docker:** 4 files (compose, Dockerfiles, nginx)
+- **Docker:** 3 files (compose, Dockerfiles)
 - **Documentation:** 6 files (README, Architecture, Deployment, etc.)
 - **Config:** 7 files (env, eslint, gitignore, etc.)
 - **Scripts:** 4 files (build, start, verify, Makefile)

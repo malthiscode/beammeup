@@ -66,8 +66,6 @@ echo -n "  frontend/Dockerfile: "
 [ -f frontend/Dockerfile ] && echo -e "${GREEN}OK${NC}" || echo -e "${RED}MISSING${NC}"
 echo -n "  docker-compose.yml: "
 [ -f docker-compose.yml ] && echo -e "${GREEN}OK${NC}" || echo -e "${RED}MISSING${NC}"
-echo -n "  nginx.conf: "
-[ -f nginx.conf ] && echo -e "${GREEN}OK${NC}" || echo -e "${RED}MISSING${NC}"
 
 # Check package.json
 echo ""

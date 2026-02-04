@@ -16,7 +16,7 @@ BeamMeUp is a **production-ready, enterprise-grade web admin panel** for managin
 - ✅ Full backend API (Fastify + TypeScript)
 - ✅ Modern frontend (React + Vite)
 - ✅ Production Docker setup (docker-compose)
-- ✅ Nginx reverse proxy configuration
+- ✅ External Caddy reverse proxy configuration (user-managed)
 - ✅ SQLite database with Prisma ORM
 - ✅ Comprehensive test suite
 - ✅ Complete documentation
@@ -104,7 +104,6 @@ beammeup/
 │   └── package.json
 │
 ├── docker-compose.yml           # Complete stack
-├── nginx.conf                   # Reverse proxy config
 ├── .env.example                 # Environment template
 ├── build.sh                     # Build script
 ├── start.sh                     # Quick start script
@@ -231,7 +230,7 @@ http://localhost
 
 ### Infrastructure
 - **Containerization:** Docker & Docker Compose
-- **Reverse Proxy:** Nginx (Alpine)
+- **Reverse Proxy:** Caddy (external)
 - **Database:** SQLite (file-based, in `/app/data`)
 - **Volumes:** Shared BeamMP directory at `/beammp`
 
@@ -328,7 +327,7 @@ See [README.md](README.md) for full endpoint documentation.
 
 ### 🔧 Deploy-Time Hardening
 1. Change SESSION_SECRET from default
-2. Enable HTTPS/TLS (Nginx cert+key)
+2. Enable HTTPS/TLS (Caddy auto-cert)
 3. Set NODE_ENV=production
 4. Configure backup automation
 5. Set up log aggregation
@@ -453,7 +452,7 @@ docker exec beammeup-backend tar czf \
 
 ### Optimizations Included
 - Database indexes on frequently queried fields
-- Nginx gzip compression
+- Caddy compression (if configured)
 - React component memoization
 - JWT caching in localStorage
 - Static asset fingerprinting for caching
@@ -461,7 +460,7 @@ docker exec beammeup-backend tar czf \
 ### Scalability Approach
 - Stateless API (can run multiple instances)
 - SQLite file can be on network mount or cloud storage
-- Nginx load balancing support (configured in compose)
+- External reverse proxy load balancing support
 - Optional Redis support for rate limiting
 
 ---
@@ -573,7 +572,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for more troubleshooting.
 - Tailwind CSS - Utility-first CSS
 - Argon2 - Password hashing
 - Docker - Containerization
-- Nginx - Reverse proxy
+- Caddy - Reverse proxy (external)
 
 ### Security Libraries
 - Helmet - Security headers

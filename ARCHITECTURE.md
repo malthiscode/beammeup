@@ -8,7 +8,7 @@
 └────────────────────────────┬────────────────────────────────┘
                              │
                     ┌────────▼────────┐
-                    │  Nginx Reverse  │
+                    │  Caddy Reverse  │
                     │     Proxy       │
                     │  (Port 80/443)  │
                     └────┬────────┬───┘
@@ -18,7 +18,7 @@
     ┌────▼──────────┐                    ┌─────▼──────────┐
     │  Frontend     │                    │  Backend API   │
     │  React + SPA  │                    │  Fastify       │
-    │  (Port 3000)  │                    │  (Port 3000)   │
+   │  (Port 8201)  │                    │  (Port 8200)   │
     └───────────────┘                    └─────┬──────────┘
                                                │
                         ┌──────────────────────┼──────────────────────┐
@@ -254,11 +254,10 @@ fs.renameSync(tempPath, CONFIG_PATH); // Atomic on most filesystems
 - CSP: restrictive for scripts/styles
 
 **HTTPS (Production):**
-```nginx
-listen 443 ssl http2;
-ssl_certificate /path/to/cert.pem;
-ssl_certificate_key /path/to/key.pem;
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```caddyfile
+admin.beammp.example.com {
+   reverse_proxy localhost:8201
+}
 ```
 
 **CORS:**
@@ -426,10 +425,10 @@ CREATE INDEX audit_logs_resource_idx ON audit_logs(resource);
 - HTTP caching headers for static assets
 - React component memoization (React.memo)
 
-**Nginx:**
-- Gzip compression enabled
+**Caddy (External):**
+- Compression enabled if configured
 - Cache busting via hash in filenames
-- Reasonable TTLs for static assets
+- Reasonable TTLs for static assets (Caddy headers)
 
 ### Scalability
 

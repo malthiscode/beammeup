@@ -201,8 +201,8 @@ docker compose up -d --build
 4. `routes/auth.ts` - Added input validation to login endpoint
 
 **Configuration**:
-1. Removed nginx container - Use your own Caddy install for reverse proxy
-2. Backend exposed on port 3000, frontend on port 3001
+1. Removed bundled reverse proxy container - Use your own Caddy install for reverse proxy
+2. Backend exposed on port 8200, frontend on port 8201
 3. Caddy configuration examples in DEPLOYMENT.md
 
 ### Frontend (`frontend/src/`)
@@ -362,7 +362,7 @@ curl http://localhost:8088/api/diagnostics/health
 - 📝 `src/lib/api.ts`
 
 ### Configuration & Documentation
-- 📝 `docker-compose.yml` (removed nginx, exposed backend:3000 and frontend:3001)
+- 📝 `docker-compose.yml` (removed bundled reverse proxy, exposed backend:8200 and frontend:8201)
 - 📝 `README.md` (major rewrite - 850+ lines, Caddy-focused)
 - 📝 `DEPLOYMENT.md` (complete rewrite - 700+ lines, Caddy reverse proxy)
 - ✨ `RUNBOOK.md` (NEW - 400+ lines)

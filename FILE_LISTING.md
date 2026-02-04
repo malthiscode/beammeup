@@ -9,12 +9,11 @@
 
 ## 📁 Project Structure
 
-### Root Directory (10 files)
+### Root Directory (9 files)
 
 ```
 beammeup/
 ├── docker-compose.yml          # Container orchestration (127 lines)
-├── nginx.conf                  # Reverse proxy config (95 lines)
 ├── .env.example                # Environment template (17 lines)
 ├── .gitignore                  # Git ignore rules (18 lines)
 ├── build.sh                    # Build script (14 lines)
@@ -137,12 +136,11 @@ frontend/
 |----------|-------|----------|
 | Shell Scripts | 3 | ~160 |
 | Docker Files | 1 | ~127 |
-| Nginx Config | 1 | ~95 |
 | Make/Build | 1 | ~87 |
-| **Total Scripts** | **6** | **~469** |
+| **Total Scripts** | **5** | **~374** |
 
 ### **Grand Total**
-- **Files:** 56
+- **Files:** 55
 - **Total LOC:** ~6,600
 - **Dependencies:** Node packages (~300 with dev deps)
 - **Test Coverage:** Auth, password hashing, setup flow
@@ -209,8 +207,7 @@ frontend/
 - [x] `Dockerfile` - Container image
 
 ### Docker & Infrastructure
-- [x] `docker-compose.yml` - Full stack (backend, frontend, nginx, beammp)
-- [x] `nginx.conf` - Reverse proxy config (single port entry)
+- [x] `docker-compose.yml` - Full stack (backend, frontend, beammp)
 - [x] `backend/Dockerfile` - Backend container
 - [x] `frontend/Dockerfile` - Frontend container
 
@@ -276,7 +273,7 @@ frontend/
 
 ### Docker & Deployment (5 files)
 - `docker-compose.yml` - Complete stack
-- `nginx.conf` - Reverse proxy
+- External Caddy reverse proxy (user-managed)
 - `backend/Dockerfile` - Backend container
 - `frontend/Dockerfile` - Frontend container
 - `start.sh` - Quick deployment
