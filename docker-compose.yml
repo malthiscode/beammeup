@@ -43,7 +43,12 @@ services:
     ports:
       - "30814:30814"
     volumes:
-      - ./beammp-config:/beammp
+      # Mount config file directly (read-only)
+      - ./beammp-config/ServerConfig.toml:/beammp/ServerConfig.toml:ro
+      # Mount Resources directory for mods (read-write)
+      - ./beammp-config/Resources:/beammp/Resources
+      # Mount data directory for logs and other generated files
+      - ./beammp-data:/beammp/Data
     networks:
       - beammeup
     depends_on:
