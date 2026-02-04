@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: beammeup-backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      FASTIFY_PORT: 3000
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production-min-32-chars}
+      DATABASE_URL: file:/app/data/beammeup.db
+      BEAMMP_CONTAINER_NAME: beammp
+      BEAMMP_CONFIG_PATH: /beammp/ServerConfig.toml
+      BEAMMP_RESOURCES_PATH: /beammp/Resources
+      DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
+    volumes:
+      - ./data:/app/data
+      - /beammp:/beammp
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - beammp
+    networks:
+      - beammeup
+
+  # Frontend (served by Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: beammeup-frontend
+    environment:
+      NODE_ENV: production
+    networks:
+      - beammeup
+
+  # Edge proxy (routes UI and API to single port)
+  proxy:
+    image: nginx:alpine
+    container_name: beammeup-proxy
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - beammeup
+
+  # BeamMP server
+  beammp:
+    image: beammp:latest
+    container_name: beammp
+    ports:
+      - "3001:3001"
+    volumes:
+      - /beammp:/beammp
+    environment:
+      BEAMMP_TOKEN: ${BEAMMP_TOKEN:-}
+    networks:
+      - beammeup
+
+networks:
+  beammeup:
+    driver: bridge

@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String?
+  passwordHash  String
+  role          Role      @default(VIEWER)
+  isActive      Boolean   @default(true)
+  lastLogin     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  modsUploaded  ModFile[]
+
+  @@map("users")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  ipAddress String?
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model ConfigBackup {
+  id        String    @id @default(cuid())
+  filename  String    @unique
+  content   String
+  createdAt DateTime  @default(now())
+  size      Int
+
+  @@map("config_backups")
+}
+
+model ModFile {
+  id           String    @id @default(cuid())
+  filename     String    @unique
+  originalName String
+  size         Int
+  sha256       String
+  uploadedAt   DateTime  @default(now())
+  uploadedBy   String
+  uploadedByUser User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([uploadedAt])
+  @@map("mod_files")
+}
+
+model AuditLog {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    AuditAction
+  resource  String    // "config", "server", "mod", "user"
+  resourceId String?
+  details   String?   // JSON stringified details or diff
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resource])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CONFIG_VIEW
+  CONFIG_UPDATE
+  SERVER_RESTART
+  MOD_UPLOAD
+  MOD_DELETE
+  USER_CREATE
+  USER_UPDATE
+  USER_DELETE
+  USER_LOGIN
+  USER_LOGOUT
+  AUTHKEY_REPLACE
+}

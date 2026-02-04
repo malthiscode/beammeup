@@ -1,0 +1,23 @@
+# BeamMP Server Configuration
+# This file is managed by BeamMeUp admin panel
+
+[General]
+Port = 3001
+AllowGuests = false
+LogChat = true
+Debug = false
+IP = "0.0.0.0"
+Private = false
+InformationPacket = 0
+Name = "BeamMP Server"
+Tags = ["racing", "drifting"]
+MaxCars = 1
+MaxPlayers = 32
+Map = "/levels/gridmap/info.json"
+Description = "A fun BeamMP server"
+ResourceFolder = "/beammp/Resources"
+AuthKey = "your-auth-key-here"
+
+[Misc]
+ImScaredOfUpdates = false
+UpdateReminderTime = 3600
