@@ -44,8 +44,6 @@ services:
       - "30814:30814"
     volumes:
       - /beammp:/beammp
-    environment:
-      BEAMMP_TOKEN: ${BEAMMP_TOKEN:-}
     networks:
       - beammeup
 

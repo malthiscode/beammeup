@@ -20,7 +20,6 @@
   NODE_ENV=production
   SESSION_SECRET=<your-32-byte-random-secret>
   FASTIFY_PORT=3000
-  BEAMMP_TOKEN=  # Required
   ```
 
 - [ ] **HTTPS Configuration**
@@ -163,7 +162,6 @@ NODE_ENV=production
 SESSION_SECRET=$SESSION_SECRET
 FASTIFY_PORT=3000
 BEAMMP_TOKEN=
-EOF
 
 # Secure permissions
 chmod 600 .env

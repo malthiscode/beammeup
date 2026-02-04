@@ -129,7 +129,6 @@ SESSION_SECRET=<your-secure-32-byte-secret>
 FASTIFY_PORT=3000
 DATABASE_URL=file:/app/data/beammeup.sqlite
 REDIS_URL=  # Optional, leave empty for in-memory rate limiting
-BEAMMP_TOKEN=  # BeamMP auth token (required)
 ```
 
 #### Docker Ports

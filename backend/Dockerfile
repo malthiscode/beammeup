@@ -1,3 +1,24 @@
+# Build stage
+FROM node:24-alpine as builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+COPY tsconfig.json ./
+COPY src ./src/
+
+# Install all dependencies (including dev)
+RUN npm ci
+
+# Generate Prisma client
+RUN npm run prisma:generate
+
+# Build TypeScript
+RUN npm run build
+
+# Production stage
 FROM node:24-alpine
 
 WORKDIR /app
@@ -6,12 +27,12 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install production dependencies only
 RUN npm ci --only=production && \
     npx prisma generate
 
-# Copy source code
-COPY dist ./dist/
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist/
 
 # Create data directory
 RUN mkdir -p data
