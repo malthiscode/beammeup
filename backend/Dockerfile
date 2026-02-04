@@ -1,11 +1,12 @@
 # Build stage
-FROM node:24-alpine AS builder
+FROM node:24-bullseye-slim AS builder
 
 WORKDIR /app
 
 # Install OpenSSL 1.1 (required by Prisma v5 native engine)
-# libssl1.1 provides libssl.so.1.1 for Prisma binary engine compatibility
-RUN apk add --no-cache libssl1.1 libcrypto1.1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libssl1.1 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -23,13 +24,14 @@ RUN npm run prisma:generate
 RUN npm run build
 
 # Production stage
-FROM node:24-alpine
+FROM node:24-bullseye-slim
 
 WORKDIR /app
 
 # Install OpenSSL 1.1 (required by Prisma v5 native engine)
-# libssl1.1 provides libssl.so.1.1 for Prisma binary engine compatibility
-RUN apk add --no-cache libssl1.1 libcrypto1.1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libssl1.1 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./

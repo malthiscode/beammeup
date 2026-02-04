@@ -44,7 +44,7 @@ services:
       - "30814:30814"
     volumes:
       # Mount config file directly (read-only)
-      - ./beammp-config/ServerConfig.toml:/beammp/ServerConfig.toml:ro
+      - ./ServerConfig.toml.example:/beammp/ServerConfig.toml:ro
       # Mount Resources directory for mods (read-write)
       - ./beammp-config/Resources:/beammp/Resources
       # Mount data directory for logs and other generated files
