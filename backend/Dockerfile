@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24-alpine as builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY tsconfig.json ./
 COPY src ./src/
 
 # Install all dependencies (including dev)
-RUN npm ci
+RUN npm install
 
 # Generate Prisma client
 RUN npm run prisma:generate
@@ -28,7 +28,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install production dependencies only
-RUN npm ci --only=production && \
+RUN npm install --omit=dev && \
     npx prisma generate
 
 # Copy built application from builder
