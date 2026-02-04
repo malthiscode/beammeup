@@ -28,7 +28,7 @@
     "@fastify/sensible": "^5.5.0",
     "@prisma/client": "^5.21.1",
     "adm-zip": "^0.5.14",
-    "argon2": "^0.32.1",
+    "argon2": "^0.31.2",
     "fastify": "^4.28.1",
     "toml": "^3.0.0"
   },
