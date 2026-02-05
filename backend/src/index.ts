@@ -98,13 +98,13 @@ export async function createApp() {
 }
 
 export async function start() {
-  const fastify = await createApp();
-
   try {
+    const fastify = await createApp();
+
     await fastify.listen({ port: ENV.FASTIFY_PORT, host: '0.0.0.0' });
     fastify.log.info(`Server listening on port ${ENV.FASTIFY_PORT}`);
   } catch (err) {
-    fastify.log.error(err);
+    console.error('FATAL ERROR:', err);
     process.exit(1);
   }
 }
