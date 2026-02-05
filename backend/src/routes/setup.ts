@@ -5,10 +5,20 @@ import { hashPassword } from '../auth/password.js';
 export async function setupRoutes(fastify: FastifyInstance) {
   // Check if setup is needed
   fastify.get('/status', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userCount = await prisma.user.count();
-    reply.code(200).send({
-      needsSetup: userCount === 0,
-    });
+    try {
+      console.log('[setup] Checking user count...');
+      const userCount = await prisma.user.count();
+      console.log('[setup] User count:', userCount);
+      reply.code(200).send({
+        needsSetup: userCount === 0,
+      });
+    } catch (error) {
+      console.error('[setup] Error checking setup status:', error);
+      reply.code(500).send({
+        error: 'Failed to check setup status',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   });
 
   // Create first user (Owner)
