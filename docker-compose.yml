@@ -13,13 +13,13 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production-min-32-chars}
       DATABASE_URL: file:/app/data/beammeup.db
       BEAMMP_CONTAINER_NAME: beammp
-      BEAMMP_CONFIG_PATH: /beammp/ServerConfig.toml
-      BEAMMP_RESOURCES_PATH: /beammp/Resources
-      DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
+      BEAMMP_CONFIG_PATH: /beammp-data/ServerConfig.toml
+      BEAMMP_RESOURCES_PATH: /beammp-data/Resources
+      DOCKER_HOST: ${DOCKER_HOST:-npipe:////./pipe/docker_engine}
     volumes:
       - ./data:/app/data
-      - ./beammp-config:/beammp
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./beammp-config:/beammp-data
+      - "npipe:////./pipe/docker_engine:npipe:////./pipe/docker_engine"
     networks:
       - beammeup
 
@@ -41,13 +41,14 @@ services:
     image: mbentley/beammp-server:latest
     container_name: beammp
     ports:
-      - "30814:30814"
+      - "30814:30814/tcp"
+      - "30814:30814/udp"
     volumes:
-      - ./beammp-config:/beammp
+      - ./beammp-config:/data
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "test", "-f", "/beammp/ServerConfig.toml"]
+      test: ["CMD", "test", "-f", "/data/ServerConfig.toml"]
       interval: 5s
       timeout: 1s
       retries: 120  # Wait up to 10 minutes for config file
