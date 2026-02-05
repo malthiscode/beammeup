@@ -22,11 +22,22 @@ function RouteSelector() {
   useEffect(() => {
     // Check if setup is needed (only if not authenticated)
     if (!isAuthenticated) {
+      console.log('[RouteSelector] Checking setup status...');
       import('./lib/api.js').then(({ api }) => {
-        api.getSetupStatus().then((status) => setNeedsSetup(status.needsSetup));
+        api.getSetupStatus()
+          .then((status) => {
+            console.log('[RouteSelector] Setup status received:', status);
+            setNeedsSetup(status.needsSetup);
+          })
+          .catch((err) => {
+            console.error('[RouteSelector] Failed to get setup status:', err);
+            setNeedsSetup(false); // Default to no setup needed on error
+          });
       });
     }
   }, [isAuthenticated]);
+
+  console.log('[RouteSelector] State - isAuthenticated:', isAuthenticated, 'needsSetup:', needsSetup);
 
   if (needsSetup === null && !isAuthenticated) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
