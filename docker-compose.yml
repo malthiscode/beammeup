@@ -19,7 +19,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./beammp-config:/beammp-data
-      - "npipe:////./pipe/docker_engine:npipe:////./pipe/docker_engine"
     networks:
       - beammeup
 
