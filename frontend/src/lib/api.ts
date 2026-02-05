@@ -1,12 +1,33 @@
 import axios, { AxiosInstance } from 'axios';
 
+// Determine API base URL
+const getApiBaseUrl = () => {
+  const isDev = import.meta.env.DEV;
+  
+  if (isDev) {
+    // In dev mode, use /api (vite proxy will route to backend:3000)
+    return '/api';
+  }
+  
+  // In production: backend is on port 8200, frontend on 8201
+  // Both served from same host (via Caddy reverse proxy)
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  
+  // Point to backend port 8200
+  return `${protocol}//${hostname}:8200/api`;
+};
+
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
 
   constructor() {
+    const baseURL = getApiBaseUrl();
+    console.log('[api] Initializing with baseURL:', baseURL);
+    
     this.client = axios.create({
-      baseURL: '/api',
+      baseURL,
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
