@@ -10,6 +10,13 @@ import { diagnosticsRoutes } from './diagnostics.js';
 
 export function setupRoutes(fastify: FastifyInstance) {
   console.log('[setupRoutes] Registering routes...');
+  
+  // Simple health check that doesn't depend on Prisma
+  fastify.get('/health', async (request, reply) => {
+    console.log('[health] Health check called');
+    return { status: 'ok' };
+  });
+  
   fastify.register(authRoutes, { prefix: '/api/auth' });
   fastify.register(setupInitRoutes, { prefix: '/api/setup' });
   fastify.register(configRoutes, { prefix: '/api/config' });
@@ -19,9 +26,4 @@ export function setupRoutes(fastify: FastifyInstance) {
   fastify.register(serverRoutes, { prefix: '/api/server' });
   fastify.register(diagnosticsRoutes, { prefix: '/api/diagnostics' });
   console.log('[setupRoutes] Routes registered');
-
-  // Health check
-  fastify.get('/health', async (request, reply) => {
-    return { status: 'ok' };
-  });
 }

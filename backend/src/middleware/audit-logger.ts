@@ -5,24 +5,31 @@ export async function auditLogger(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  // Store request info for later use in response handler
-  const startTime = Date.now();
-  
-  (request as any).auditContext = {
-    userId: (request.user as any)?.sub,
-    ipAddress: request.ip,
-    userAgent: request.headers['user-agent'],
-    method: request.method,
-    url: request.url,
-  };
+  try {
+    // Store request info for later use in response handler
+    const startTime = Date.now();
+    
+    (request as any).auditContext = {
+      userId: (request.user as any)?.sub,
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'],
+      method: request.method,
+      url: request.url,
+    };
 
-  // Hook into the response to log sensitive actions
-  (reply as any).addHook('onResponse', async () => {
-    const duration = Date.now() - startTime;
-    if (duration > 5000) {
-      request.log.warn(`Slow request: ${request.method} ${request.url} (${duration}ms)`);
+    // Hook into the response to log slow requests
+    if (typeof reply.addHook === 'function') {
+      reply.addHook('onResponse', async () => {
+        const duration = Date.now() - startTime;
+        if (duration > 5000) {
+          request.log.warn(`Slow request: ${request.method} ${request.url} (${duration}ms)`);
+        }
+      });
     }
-  });
+  } catch (error) {
+    console.error('[auditLogger] Error in audit middleware:', error);
+    // Don't fail the request if audit logging fails
+  }
 }
 
 declare global {
