@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../index.js';
 import { hashPassword } from '../auth/password.js';
+import { csrfProtection } from '../middleware/csrf.js';
 
 export async function setupRoutes(fastify: FastifyInstance) {
   // Check if setup is needed
@@ -24,6 +25,7 @@ export async function setupRoutes(fastify: FastifyInstance) {
   // Create first user (Owner)
   fastify.post(
     '/create-owner',
+    { preHandler: csrfProtection },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const userCount = await prisma.user.count();
       if (userCount > 0) {

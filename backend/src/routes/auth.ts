@@ -15,7 +15,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Login
   fastify.post(
     '/login',
-    { rateLimit: { max: 5, timeWindow: '15 minutes' } } as any,
+    { preHandler: csrfProtection, rateLimit: { max: 5, timeWindow: '15 minutes' } } as any,
     async (request: FastifyRequest, reply: FastifyReply) => {
       const payload = request.body as any;
       const errors = validateLoginRequest(payload);

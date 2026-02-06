@@ -21,6 +21,7 @@ const getApiBaseUrl = () => {
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
+  private csrfToken: string | null = null;
 
   constructor() {
     const baseURL = getApiBaseUrl();
@@ -37,10 +38,13 @@ class ApiClient {
     // Load token from localStorage
     this.token = localStorage.getItem('token');
 
-    // Add auth header
+    // Add auth and CSRF headers
     this.client.interceptors.request.use((config) => {
       if (this.token) {
         config.headers.Authorization = `Bearer ${this.token}`;
+      }
+      if (this.csrfToken) {
+        config.headers['X-CSRF-Token'] = this.csrfToken;
       }
       return config;
     });
@@ -72,11 +76,31 @@ class ApiClient {
     return this.token;
   }
 
+  // Fetch and store CSRF token
+  async fetchCSRFToken() {
+    try {
+      const response = await this.client.get('/auth/csrf');
+      this.csrfToken = response.data.csrf_token;
+    } catch (error) {
+      console.error('[api] Failed to fetch CSRF token:', error);
+      throw error;
+    }
+  }
+
   // Auth endpoints
   async login(username: string, password: string) {
+    // Fetch CSRF token before login
+    await this.fetchCSRFToken();
+    
+    // Proceed with login
+    return this._performLogin(username, password);
+  }
+
+  private async _performLogin(username: string, password: string) {
     const response = await this.client.post('/auth/login', { username, password });
-    if (response.data.token) {
-      this.setToken(response.data.token);
+    if (response.data.user?.id) {
+      // Session token is set in cookie, use JWT from response if provided
+      // The actual auth is handled by the secure session cookie
     }
     return response.data;
   }
@@ -98,6 +122,9 @@ class ApiClient {
   }
 
   async createOwner(username: string, password: string, email?: string) {
+    // Fetch CSRF token before setup
+    await this.fetchCSRFToken();
+    
     const response = await this.client.post('/setup/create-owner', {
       username,
       password,
