@@ -40,7 +40,7 @@ export function ConfigPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [authKeySet, setAuthKeySet] = useState<boolean | null>(null);
+  const [authKeyStatus, setAuthKeyStatus] = useState<{ isSet: boolean; isDefault: boolean } | null>(null);
   const [showAuthKeyModal, setShowAuthKeyModal] = useState(false);
   const [showMapAdvanced, setShowMapAdvanced] = useState(false);
 
@@ -62,8 +62,8 @@ export function ConfigPage() {
 
     api
       .getAuthheyStatus()
-      .then((status) => setAuthKeySet(status.isSet))
-      .catch(() => setAuthKeySet(null));
+      .then((status) => setAuthKeyStatus(status))
+      .catch(() => setAuthKeyStatus(null));
   }, []);
 
   // Detect changes
@@ -95,7 +95,7 @@ export function ConfigPage() {
 
   const handleAuthKeyReplaced = () => {
     addNotification('Success', 'AuthKey replaced successfully', 'success');
-    setAuthKeySet(true);
+    setAuthKeyStatus({ isSet: true, isDefault: false });
   };
 
   if (loading) {
@@ -130,6 +130,18 @@ export function ConfigPage() {
         {isDirty && (
           <div className="bg-amber-500/15 text-amber-200 p-3 rounded-lg border border-amber-500/30">
             <span className="font-semibold">●</span> You have unsaved changes
+          </div>
+        )}
+
+        {authKeyStatus?.isDefault && (
+          <div className="bg-red-500/15 text-red-200 p-4 rounded-lg border border-red-500/30 flex items-start gap-3">
+            <span className="text-xl leading-none mt-0.5">⚠️</span>
+            <div>
+              <p className="font-semibold">AuthKey Not Set</p>
+              <p className="text-sm text-red-300 mt-1">
+                The BeamMP AuthKey is still set to the default placeholder. Please replace it with a valid key and restart the server for BeamMP connectivity. Players will not be able to connect until this is done.
+              </p>
+            </div>
           </div>
         )}
 
@@ -355,13 +367,28 @@ export function ConfigPage() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="font-medium">BeamMP AuthKey</p>
-                <p className="text-sm text-muted">
-                  {authKeySet ? 'Key is set' : 'Key not set'}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  {authKeyStatus?.isDefault ? (
+                    <>
+                      <span className="text-lg">⚠️</span>
+                      <p className="text-sm text-red-300 font-semibold">Key not set (using default)</p>
+                    </>
+                  ) : authKeyStatus?.isSet ? (
+                    <>
+                      <span className="text-lg">✓</span>
+                      <p className="text-sm text-green-300">Key is set</p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-lg">●</span>
+                      <p className="text-sm text-muted">Key not set</p>
+                    </>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setShowAuthKeyModal(true)}
-                className="btn btn-danger"
+                className={authKeyStatus?.isDefault ? 'btn btn-danger' : 'btn btn-secondary'}
               >
                 Replace AuthKey
               </button>

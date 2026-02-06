@@ -50,9 +50,11 @@ export async function configRoutes(fastify: FastifyInstance) {
       await requireAuth(request, reply);
 
       const config = await readConfigFile();
-      const isSet = !!(config.General?.AuthKey);
+      const authKey = config.General?.AuthKey;
+      const isDefault = authKey === 'CHANGE_ME_TO_YOUR_BEAMMP_AUTH_KEY';
+      const isSet = !!authKey && !isDefault;
 
-      reply.code(200).send({ isSet });
+      reply.code(200).send({ isSet, isDefault });
     } catch {
       reply.code(500).send({ error: 'Failed to check AuthKey' });
     }
