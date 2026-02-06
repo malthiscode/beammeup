@@ -60,11 +60,14 @@ export async function setupRoutes(fastify: FastifyInstance) {
       try {
         // Update config with AuthKey
         const config = await readConfigFile();
-        if (!config.General) {
-          config.General = {};
+        if (config.General) {
+          config.General.AuthKey = authKey;
+          await writeConfigFile(config);
+        } else {
+          return reply.code(500).send({
+            error: 'Configuration missing General section',
+          });
         }
-        config.General.AuthKey = authKey;
-        await writeConfigFile(config);
       } catch (error) {
         console.error('[setup] Failed to update config with AuthKey:', error);
         return reply.code(500).send({
