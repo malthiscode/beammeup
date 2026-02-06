@@ -56,9 +56,16 @@ export async function writeConfigFile(config: BeamMPConfig): Promise<void> {
     const tempPath = `${CONFIG_PATH}.${randomBytes(8).toString('hex')}`;
     await writeFile(tempPath, content, 'utf-8');
 
-    // Rename is atomic on most filesystems
+    // Set permissions so BeamMP container can write to it
+    // 0o666 = rw-rw-rw- (readable/writable by all)
     const fs = await import('fs');
+    fs.chmodSync(tempPath, 0o666);
+
+    // Rename is atomic on most filesystems
     fs.renameSync(tempPath, CONFIG_PATH);
+    
+    // Ensure final file also has correct permissions
+    fs.chmodSync(CONFIG_PATH, 0o666);
   } catch (error) {
     console.error('Failed to write config file:', error);
     throw new Error('Failed to write server config');
