@@ -1,6 +1,8 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth.js';
+import { NotificationProvider } from './lib/notifications.js';
+import { NotificationCenter } from './components/NotificationCenter.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { SetupPage } from './pages/SetupPage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
@@ -20,7 +22,6 @@ function RouteSelector() {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if setup is needed (only if not authenticated)
     if (!isAuthenticated) {
       console.log('[RouteSelector] Checking setup status...');
       import('./lib/api.js').then(({ api }) => {
@@ -31,7 +32,7 @@ function RouteSelector() {
           })
           .catch((err) => {
             console.error('[RouteSelector] Failed to get setup status:', err);
-            setNeedsSetup(false); // Default to no setup needed on error
+            setNeedsSetup(false);
           });
       });
     }
@@ -41,8 +42,11 @@ function RouteSelector() {
 
   if (needsSetup === null && !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-200">
-        <div className="panel px-6 py-4">Loading...</div>
+      <div className="page flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-var(--border-primary) border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-var(--text-muted)">Initializing...</p>
+        </div>
       </div>
     );
   }
@@ -101,11 +105,14 @@ function RouteSelector() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <RouteSelector />
-      </AuthProvider>
-    </Router>
+    <NotificationProvider>
+      <Router>
+        <AuthProvider>
+          <NotificationCenter />
+          <RouteSelector />
+        </AuthProvider>
+      </Router>
+    </NotificationProvider>
   );
 }
 
