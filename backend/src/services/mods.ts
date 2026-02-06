@@ -7,7 +7,7 @@ import { readConfigFile } from './config.js';
 
 const CONFIG_PATH = process.env.BEAMMP_CONFIG_PATH || '/beammp/ServerConfig.toml';
 const RESOURCES_PATH = process.env.BEAMMP_RESOURCES_PATH || '';
-const MAX_ZIP_SIZE = parseInt(process.env.MAX_MOD_SIZE || '500') * 1024 * 1024; // 500MB default
+const MAX_ZIP_SIZE = parseInt(process.env.MAX_MOD_SIZE || '1024') * 1024 * 1024; // 1024MB default
 
 const resolveResourcesPath = (resourceFolder: string): string => {
   if (RESOURCES_PATH) {

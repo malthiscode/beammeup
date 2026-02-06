@@ -79,9 +79,10 @@ export async function createApp() {
   // Utilities
   await fastify.register(sensible);
   await fastify.register(cookie);
+  const maxModSizeMb = parseInt(process.env.MAX_MOD_SIZE || '1024', 10);
   await fastify.register(multipart, {
     limits: {
-      fileSize: 100 * 1024 * 1024, // 100MB
+      fileSize: maxModSizeMb * 1024 * 1024,
     },
   });
 
