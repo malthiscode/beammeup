@@ -38,6 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     const response = await api.login(username, password);
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+      api.setToken(response.token);
+    }
     setUser(response.user);
     setToken(response.token);
   };
@@ -51,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await api.logout();
+    localStorage.removeItem('token');
     setUser(null);
     setToken(null);
   };

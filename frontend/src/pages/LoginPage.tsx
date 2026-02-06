@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import { useAuth } from '../lib/auth.js';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
@@ -8,6 +9,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     // Check if setup is needed and redirect if necessary
@@ -28,7 +30,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      await api.login(username, password);
+      await login(username, password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed');
