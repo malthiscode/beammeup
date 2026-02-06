@@ -27,9 +27,12 @@ export async function issueCSRFToken(
   reply: FastifyReply
 ) {
   const token = generateCsrfToken();
+  // Use secure cookies only if the connection is actually HTTPS
+  const isSecure = request.protocol === 'https' || request.headers['x-forwarded-proto'] === 'https';
+  
   reply.cookie('csrf_token', token, {
     httpOnly: false, // Front-end needs to read it
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours

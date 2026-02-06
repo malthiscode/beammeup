@@ -33,9 +33,13 @@ export function setSessionCookie(
   token: string,
   expiresAt: Date
 ) {
+  // Use secure cookies only if the connection is actually HTTPS
+  const request = reply.request;
+  const isSecure = request.protocol === 'https' || request.headers['x-forwarded-proto'] === 'https';
+  
   reply.cookie('session_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
     expires: expiresAt,
@@ -43,9 +47,12 @@ export function setSessionCookie(
 }
 
 export function clearSessionCookie(reply: FastifyReply) {
+  const request = reply.request;
+  const isSecure = request.protocol === 'https' || request.headers['x-forwarded-proto'] === 'https';
+  
   reply.clearCookie('session_token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
   });
