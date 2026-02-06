@@ -28,13 +28,13 @@
   input,
   textarea,
   select {
-    @apply w-full bg-secondary border border-primary rounded-lg px-3 py-2.5 text-primary placeholder-muted;
+    @apply w-full bg-secondary border border-primary rounded-lg px-3 py-2.5 text-primary;
     @apply transition-all focus:outline-none focus:ring-2 focus:ring-beam-orange/40 focus:border-beam-orange;
   }
 
   input::placeholder,
   textarea::placeholder {
-    @apply text-muted;
+    color: #94a3b8;
   }
 
   label {
@@ -146,7 +146,7 @@
   }
 
   .input {
-    @apply w-full bg-secondary border border-primary rounded-lg px-3 py-2.5 text-primary placeholder-muted;
+    @apply w-full bg-secondary border border-primary rounded-lg px-3 py-2.5 text-primary;
     @apply transition-all focus:outline-none focus:ring-2 focus:ring-beam-orange/40 focus:border-beam-orange;
   }
 
