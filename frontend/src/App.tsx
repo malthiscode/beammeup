@@ -10,6 +10,7 @@ import { ConfigPage } from './pages/ConfigPage.js';
 import { ModsPage } from './pages/ModsPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 import { AuditPage } from './pages/AuditPage.js';
+import { api } from './lib/api.js';
 import './index.css';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -23,15 +24,13 @@ function RouteSelector() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      import('./lib/api.js').then(({ api }) => {
-        api.getSetupStatus()
-          .then((status) => {
-            setNeedsSetup(status.needsSetup);
-          })
-          .catch(() => {
-            setNeedsSetup(false);
-          });
-      });
+      api.getSetupStatus()
+        .then((status) => {
+          setNeedsSetup(status.needsSetup);
+        })
+        .catch(() => {
+          setNeedsSetup(false);
+        });
     }
   }, [isAuthenticated]);
 
