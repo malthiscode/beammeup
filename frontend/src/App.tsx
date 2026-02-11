@@ -28,7 +28,7 @@ function RouteSelector() {
           .then((status) => {
             setNeedsSetup(status.needsSetup);
           })
-          .catch((err) => {
+          .catch(() => {
             setNeedsSetup(false);
           });
       });

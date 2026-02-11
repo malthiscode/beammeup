@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24-bullseye-slim AS builder
+FROM node:22-bullseye-slim AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN npm run prisma:generate
 RUN npm run build
 
 # Production stage
-FROM node:24-bullseye-slim
+FROM node:22-bullseye-slim
 
 WORKDIR /app
 
