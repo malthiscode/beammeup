@@ -50,15 +50,11 @@ class ApiClient {
       return config;
     });
 
-    // Handle 401 responses
+    // Don't automatically redirect on 401 - let components handle it
+    // Some requests (like /auth/me on first load) are expected to return 401
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
   }
 
