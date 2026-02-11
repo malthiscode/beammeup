@@ -93,7 +93,7 @@ class ApiClient {
 
   async logout() {
     await this.client.post('/auth/logout');
-    this.clearAuth();
+    // Session cookie is automatically cleared by the server
   }
 
   async getCurrentUser() {
