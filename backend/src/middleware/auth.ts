@@ -5,10 +5,12 @@ export async function requireAuth(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  try {
-    await request.jwtVerify();
-  } catch (err) {
+  // Session is validated by attachSession middleware
+  const userId = (request.user as any)?.sub;
+  
+  if (!userId) {
     reply.code(401).send({ error: 'Unauthorized' });
+    return;
   }
 }
 

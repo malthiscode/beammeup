@@ -85,11 +85,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     '/logout',
     { preHandler: csrfProtection },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        await request.jwtVerify();
-        const userId = (request.user as any)?.sub;
+      // Session is validated by attachSession middleware
+      const userId = (request.user as any)?.sub;
 
-        if (userId) {
+      if (userId) {
+        try {
           // Delete all sessions for this user
           await prisma.session.deleteMany({ where: { userId } });
 
@@ -101,22 +101,28 @@ export async function authRoutes(fastify: FastifyInstance) {
             {},
             request.ip
           );
+        } catch (error) {
+          console.error('[auth] Error during logout:', error);
         }
-
-        clearSessionCookie(reply);
-        reply.code(200).send({ message: 'Logged out' });
-      } catch {
-        reply.code(401).send({ error: 'Unauthorized' });
       }
+
+      clearSessionCookie(reply);
+      reply.code(200).send({ message: 'Logged out' });
     }
   );
 
   // Get current user
   fastify.get('/me', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Session is already validated by attachSession middleware
+    const userId = (request.user as any)?.sub;
+    
+    if (!userId) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
     try {
-      await request.jwtVerify();
       const user = await prisma.user.findUnique({
-        where: { id: (request.user as any)?.sub },
+        where: { id: userId },
         select: { id: true, username: true, role: true, email: true },
       });
 
@@ -125,8 +131,9 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       reply.code(200).send(user);
-    } catch {
-      reply.code(401).send({ error: 'Unauthorized' });
+    } catch (error) {
+      console.error('[auth] Error fetching current user:', error);
+      reply.code(500).send({ error: 'Internal server error' });
     }
   });
 }
