@@ -17,7 +17,7 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-RUN npm install express
+RUN npm install express http-proxy-middleware
 
 COPY --from=builder /app/dist ./dist
 COPY server.js ./
