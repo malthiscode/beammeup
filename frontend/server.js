@@ -35,13 +35,13 @@ app.use('/api', createProxyMiddleware({
     '^/api': '/api', // Keep the /api prefix
   },
   onProxyReq: (proxyReq, req, res) => {
-    console.log(`[proxy] Forwarding ${req.method} ${req.path} to ${backendUrl}${req.path}`);
+    console.log(`[proxy-req] Target: ${backendUrl}, Path: ${req.path}, Full URL: ${backendUrl}${req.url}`);
   },
   onProxyRes: (proxyRes, req, res) => {
-    console.log(`[proxy] Response ${proxyRes.statusCode} for ${req.method} ${req.path}`);
+    console.log(`[proxy-res] ${proxyRes.statusCode} for ${req.method} ${req.url}`);
   },
   onError: (err, req, res) => {
-    console.error(`[proxy] Error: ${err.message}`);
+    console.error(`[proxy-error] ${err.code}: ${err.message}`);
     res.status(502).json({ error: 'Backend unreachable', details: err.message });
   },
 }));

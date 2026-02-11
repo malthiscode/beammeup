@@ -32,6 +32,16 @@ export async function createApp() {
     bodyLimit: 100 * 1024 * 1024, // 100MB max request size
   });
 
+  // Log all incoming requests
+  fastify.addHook('onRequest', async (request, reply) => {
+    console.log(`[backend] Incoming ${request.method} ${request.url}`);
+  });
+
+  // Add response logging
+  fastify.addHook('onResponse', async (request, reply) => {
+    console.log(`[backend] Response ${reply.statusCode} for ${request.method} ${request.url}`);
+  });
+
   // Security headers via Helmet
   await fastify.register(helmet, {
     contentSecurityPolicy: {
