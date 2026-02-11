@@ -20,13 +20,9 @@ const getApiBaseUrl = () => {
     return '/api';
   }
   
-  // In production: backend is on port 8200, frontend on 8201
-  // Both served from same host (via Caddy reverse proxy)
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-  
-  // Point to backend port 8200
-  return `${protocol}//${hostname}:8200/api`;
+  // In production: Caddy reverse proxy routes /api/* to backend:8200
+  // Always use relative path so requests go through the same origin (Caddy)
+  return '/api';
 };
 
 class ApiClient {
