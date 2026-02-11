@@ -14,3 +14,21 @@ coverage/
 build/
 data/
 .prisma/
+
+# Development documentation (not needed for production deployment)
+ARCHITECTURE.md
+BEAMMP_CONFIG_SETUP.md
+COMPLETION_REPORT.md
+DOCUMENTATION_INDEX.md
+FILE_LISTING.md
+PHASE8_COMPLETION.md
+PROJECT_SUMMARY.md
+SESSION_CHANGELOG.md
+beammeup.code-workspace
+README.old.md
+
+# Build scripts (kept in repo but not essential)
+# build.sh
+# start.sh
+# verify.sh
+# Makefile

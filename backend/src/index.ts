@@ -14,17 +14,55 @@ import { attachSession } from './middleware/session.js';
 
 console.log('[index.ts] Module loading...');
 
+// Auto-generate SESSION_SECRET if not provided
+function getOrCreateSessionSecret(): string {
+  const envSecret = process.env.SESSION_SECRET;
+  if (envSecret && envSecret.length >= 32) {
+    return envSecret;
+  }
+
+  const secretPath = '/app/data/.session_secret';
+  const fs = require('fs');
+  const crypto = require('crypto');
+  
+  try {
+    // Try to read existing secret
+    if (fs.existsSync(secretPath)) {
+      const secret = fs.readFileSync(secretPath, 'utf8').trim();
+      if (secret.length >= 32) {
+        console.log('[SESSION] Using persisted session secret from', secretPath);
+        return secret;
+      }
+    }
+  } catch (err) {
+    console.warn('[SESSION] Could not read existing secret:', err);
+  }
+
+  // Generate new secret
+  const newSecret = crypto.randomBytes(32).toString('base64');
+  console.log('[SESSION] Generating new session secret...');
+  
+  try {
+    // Ensure data directory exists
+    const dataDir = '/app/data';
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    // Write secret to file
+    fs.writeFileSync(secretPath, newSecret, { mode: 0o600 });
+    console.log('[SESSION] Session secret saved to', secretPath);
+  } catch (err) {
+    console.warn('[SESSION] Could not persist secret:', err);
+  }
+  
+  return newSecret;
+}
+
 const ENV = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   FASTIFY_PORT: parseInt(process.env.FASTIFY_PORT || '3000', 10),
-  SESSION_SECRET: process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'dev-secret-change-in-production'),
+  SESSION_SECRET: getOrCreateSessionSecret(),
 };
-
-// Validate required environment variables in production
-if (ENV.NODE_ENV === 'production' && !ENV.SESSION_SECRET) {
-  console.error('[ERROR] SESSION_SECRET environment variable is required in production');
-  process.exit(1);
-}
 
 console.log('[index.ts] Initializing Prisma...');
 export const prisma = new PrismaClient();

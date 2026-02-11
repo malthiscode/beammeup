@@ -1,19 +1,20 @@
 # Security Hardening Guide
 
-## Required Environment Variables (Production)
+## Session Secret Management
 
-### SESSION_SECRET
-**CRITICAL**: Must be set in production. Generate with:
+**SESSION_SECRET** is now **automatically generated** on first run if not provided. The secret is:
+- Generated using cryptographically secure random bytes
+- Stored in `/app/data/.session_secret` with 0600 permissions
+- Persisted across container restarts
+- Reused on subsequent startups
+
+**Optional Manual Configuration:**
+If you prefer to set your own session secret, add to `.env`:
 ```bash
-openssl rand -base64 32
+SESSION_SECRET=$(openssl rand -base64 32)
 ```
 
-Add to `.env`:
-```
-SESSION_SECRET=your_generated_secret_here
-```
-
-The backend will refuse to start without this in production mode.
+The backend will use your provided secret if it's at least 32 characters long.
 
 ## Security Configurations Applied
 
@@ -81,16 +82,16 @@ The backend will refuse to start without this in production mode.
 
 ## Deployment Checklist
 
-- [ ] Set SESSION_SECRET environment variable
-- [ ] Set ALLOWED_ORIGINS for CORS (production)
-- [ ] Enable HTTPS via reverse proxy (Caddy)
-- [ ] Set NODE_ENV=production
-- [ ] Review and rotate SESSION_SECRET periodically
-- [ ] Enable Docker socket permissions (for server control)
+- [ ] (Optional) Set custom SESSION_SECRET environment variable
+- [ ] (Optional) Set ALLOWED_ORIGINS for CORS in production
+- [ ] Enable HTTPS via reverse proxy (Caddy recommended)
+- [ ] Set NODE_ENV=production in .env file
+- [ ] Enable Docker socket access (for server control)
 - [ ] Regular npm audit and dependency updates
 - [ ] Monitor audit logs for suspicious activity
-- [ ] Backup SQLite database regularly
+- [ ] Backup ./data directory regularly (includes database and session secret)
 - [ ] Limit Docker socket access to backend container only
+- [ ] Use strong passwords for all admin accounts
 
 ## Known Security Considerations
 
