@@ -12,6 +12,7 @@ interface FileWithStatus {
   status: FileStatus;
   error?: string;
   id: string;
+  progress?: number; // 0-100
 }
 
 export function ModsPage() {
@@ -130,20 +131,32 @@ export function ModsPage() {
       setFilesWithStatus(prev =>
         prev.map(f =>
           f.id === fileWithStatus.id
-            ? { ...f, status: 'uploading' as FileStatus, error: undefined }
+            ? { ...f, status: 'uploading' as FileStatus, error: undefined, progress: 0 }
             : f
         )
       );
 
       try {
-        await api.uploadMod(fileWithStatus.file);
+        await api.uploadMod(fileWithStatus.file, (progressEvent) => {
+          const percentCompleted = progressEvent.total 
+            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            : 0;
+          
+          setFilesWithStatus(prev =>
+            prev.map(f =>
+              f.id === fileWithStatus.id
+                ? { ...f, progress: percentCompleted }
+                : f
+            )
+          );
+        });
         successCount += 1;
         
         // Update status to success
         setFilesWithStatus(prev =>
           prev.map(f =>
             f.id === fileWithStatus.id
-              ? { ...f, status: 'success' as FileStatus }
+              ? { ...f, status: 'success' as FileStatus, progress: 100 }
               : f
           )
         );
@@ -352,9 +365,19 @@ export function ModsPage() {
                             </div>
                           )}
                         </div>
-                        <div className={`text-xs ${getStatusColor(fileWithStatus.status)} flex-shrink-0`}>
+                        <div className={`text-xs ${getStatusColor(fileWithStatus.status)} flex-shrink-0 min-w-[80px]`}>
                           {fileWithStatus.status === 'pending' && 'Pending'}
-                          {fileWithStatus.status === 'uploading' && 'Uploading...'}
+                          {fileWithStatus.status === 'uploading' && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-blue-500 transition-all duration-300"
+                                  style={{ width: `${fileWithStatus.progress || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px]">{fileWithStatus.progress || 0}%</span>
+                            </div>
+                          )}
                           {fileWithStatus.status === 'success' && 'Success'}
                           {fileWithStatus.status === 'error' && 'Failed'}
                         </div>

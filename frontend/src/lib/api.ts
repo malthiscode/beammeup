@@ -169,7 +169,7 @@ class ApiClient {
     return response.data;
   }
 
-  async uploadMod(file: File) {
+  async uploadMod(file: File, onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void) {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -177,6 +177,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      onUploadProgress,
     });
     return response.data;
   }
