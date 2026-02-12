@@ -43,6 +43,7 @@ export function ConfigPage() {
   const [authKeyStatus, setAuthKeyStatus] = useState<{ isSet: boolean; isDefault: boolean } | null>(null);
   const [showAuthKeyModal, setShowAuthKeyModal] = useState(false);
   const [modMaps, setModMaps] = useState<Array<{ value: string; label: string | null }>>([]);
+  const [loadingMaps, setLoadingMaps] = useState(true);
   const [mapScanInfo, setMapScanInfo] = useState<{ timedOut: boolean; skippedLarge: number } | null>(null);
   const [mapLabelInput, setMapLabelInput] = useState('');
   const [savingMapLabel, setSavingMapLabel] = useState(false);
@@ -71,9 +72,11 @@ export function ConfigPage() {
 
   useEffect(() => {
     if (!user || !['OWNER', 'ADMIN'].includes(user.role)) {
+      setLoadingMaps(false);
       return;
     }
 
+    setLoadingMaps(true);
     api
       .getAvailableMaps()
       .then((result) => {
@@ -88,6 +91,9 @@ export function ConfigPage() {
       })
       .catch(() => {
         addNotification('Warning', 'Map list could not be refreshed from mods', 'warning');
+      })
+      .finally(() => {
+        setLoadingMaps(false);
       });
   }, [user, addNotification]);
 
@@ -142,10 +148,21 @@ export function ConfigPage() {
   );
 
   const optionValues = mergedOptions.map((preset) => preset.value);
-  const isMissingMap = currentMapValue && !optionValues.includes(currentMapValue);
-  const mapOptions = isMissingMap
-    ? [{ label: `Missing map (mod removed or corrupt): ${currentMapValue}`, value: currentMapValue }, ...mergedOptions]
-    : mergedOptions;
+  const isMissingMap = !loadingMaps && currentMapValue && !optionValues.includes(currentMapValue);
+  const isLoadingMap = loadingMaps && currentMapValue && !optionValues.includes(currentMapValue);
+  
+  let mapOptions = mergedOptions;
+  if (isMissingMap) {
+    mapOptions = [
+      { label: `Missing map (mod removed or corrupt): ${currentMapValue}`, value: currentMapValue },
+      ...mergedOptions
+    ];
+  } else if (isLoadingMap) {
+    mapOptions = [
+      { label: `${formatMapLabel(currentMapValue)} (loading...)`, value: currentMapValue },
+      ...mergedOptions
+    ];
+  }
 
   const selectedModMap = modMaps.find((map) => map.value === currentMapValue) || null;
   const selectedModLabel = selectedModMap?.label || (selectedModMap ? formatMapLabel(selectedModMap.value) : '');
@@ -309,6 +326,11 @@ export function ConfigPage() {
                 </select>
                 <p className="field-hint">
                   {serverMapValue ? `Current: ${formatMapLabel(serverMapValue)}` : 'No map configured yet'}
+                  {loadingMaps && (
+                    <span className="block text-blue-300 mt-1">
+                      🔄 Scanning mods for maps...
+                    </span>
+                  )}
                   {mapScanInfo?.timedOut && (
                     <span className="block text-amber-300 mt-1">
                       ⚠️ Map scan timed out - increase MAP_SCAN_TIMEOUT_MS if needed
