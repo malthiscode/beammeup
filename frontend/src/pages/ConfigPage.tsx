@@ -42,7 +42,15 @@ export function ConfigPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [authKeyStatus, setAuthKeyStatus] = useState<{ isSet: boolean; isDefault: boolean } | null>(null);
   const [showAuthKeyModal, setShowAuthKeyModal] = useState(false);
-  const [modMaps, setModMaps] = useState<Array<{ value: string; label: string | null }>>([]);
+  const [modMaps, setModMaps] = useState<Array<{ value: string; label: string | null }>>(() => {
+    // Load cached maps from localStorage on mount
+    try {
+      const cached = localStorage.getItem('beammeup_mod_maps');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loadingMaps, setLoadingMaps] = useState(true);
   const [mapScanInfo, setMapScanInfo] = useState<{ timedOut: boolean; skippedLarge: number } | null>(null);
   const [mapLabelInput, setMapLabelInput] = useState('');
@@ -82,6 +90,12 @@ export function ConfigPage() {
       .then((result) => {
         const maps = Array.isArray(result?.maps) ? result.maps : [];
         setModMaps(maps);
+        // Cache maps in localStorage for instant load on next visit
+        try {
+          localStorage.setItem('beammeup_mod_maps', JSON.stringify(maps));
+        } catch (error) {
+          console.warn('[ConfigPage] Failed to cache mod maps:', error);
+        }
         if (result?.timedOut || result?.skippedLarge > 0) {
           setMapScanInfo({
             timedOut: !!result?.timedOut,
@@ -147,20 +161,18 @@ export function ConfigPage() {
     []
   );
 
+  // Always include server map even if not in scanned list (prevents "missing map" flash)
   const optionValues = mergedOptions.map((preset) => preset.value);
-  // Use serverMapValue for loading checks since it persists across reloads
-  const isMissingMap = !loadingMaps && serverMapValue && !optionValues.includes(serverMapValue);
-  const isLoadingMap = loadingMaps && serverMapValue && !optionValues.includes(serverMapValue);
+  const serverModMap = modMaps.find((map) => map.value === serverMapValue) || null;
+  const serverMapInOptions = optionValues.includes(serverMapValue);
   
   let mapOptions = mergedOptions;
-  if (isMissingMap) {
+  if (serverMapValue && !serverMapInOptions) {
+    // Server map not in options yet - add it with best available label
+    const label = serverModMap?.label || formatMapLabel(serverMapValue);
+    const suffix = loadingMaps ? ' (loading...)' : '';
     mapOptions = [
-      { label: `Missing map (mod removed or corrupt): ${serverMapValue}`, value: serverMapValue },
-      ...mergedOptions
-    ];
-  } else if (isLoadingMap) {
-    mapOptions = [
-      { label: `${formatMapLabel(serverMapValue)} (loading...)`, value: serverMapValue },
+      { label: `${label}${suffix}`, value: serverMapValue },
       ...mergedOptions
     ];
   }
@@ -168,7 +180,6 @@ export function ConfigPage() {
   const selectedModMap = modMaps.find((map) => map.value === currentMapValue) || null;
   const selectedModLabel = selectedModMap?.label || (selectedModMap ? formatMapLabel(selectedModMap.value) : '');
   
-  const serverModMap = modMaps.find((map) => map.value === serverMapValue) || null;
   const serverMapDisplayName = serverModMap?.label 
     ? serverModMap.label 
     : formatMapLabel(serverMapValue);
@@ -197,9 +208,16 @@ export function ConfigPage() {
     setSavingMapLabel(true);
     try {
       const updated = await api.updateMapLabel(selectedModMap.value, nextLabel);
-      setModMaps((prev) =>
-        prev.map((map) => (map.value === updated.mapPath ? { ...map, label: updated.label } : map))
+      const updatedMaps = modMaps.map((map) => 
+        map.value === updated.mapPath ? { ...map, label: updated.label } : map
       );
+      setModMaps(updatedMaps);
+      // Update localStorage cache
+      try {
+        localStorage.setItem('beammeup_mod_maps', JSON.stringify(updatedMaps));
+      } catch (error) {
+        console.warn('[ConfigPage] Failed to update cached mod maps:', error);
+      }
       addNotification('Success', 'Map label updated', 'success');
     } catch (err: any) {
       addNotification('Error', err.response?.data?.error || 'Failed to update map label', 'error');
