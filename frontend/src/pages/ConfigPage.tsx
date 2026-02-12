@@ -148,18 +148,19 @@ export function ConfigPage() {
   );
 
   const optionValues = mergedOptions.map((preset) => preset.value);
-  const isMissingMap = !loadingMaps && currentMapValue && !optionValues.includes(currentMapValue);
-  const isLoadingMap = loadingMaps && currentMapValue && !optionValues.includes(currentMapValue);
+  // Use serverMapValue for loading checks since it persists across reloads
+  const isMissingMap = !loadingMaps && serverMapValue && !optionValues.includes(serverMapValue);
+  const isLoadingMap = loadingMaps && serverMapValue && !optionValues.includes(serverMapValue);
   
   let mapOptions = mergedOptions;
   if (isMissingMap) {
     mapOptions = [
-      { label: `Missing map (mod removed or corrupt): ${currentMapValue}`, value: currentMapValue },
+      { label: `Missing map (mod removed or corrupt): ${serverMapValue}`, value: serverMapValue },
       ...mergedOptions
     ];
   } else if (isLoadingMap) {
     mapOptions = [
-      { label: `${formatMapLabel(currentMapValue)} (loading...)`, value: currentMapValue },
+      { label: `${formatMapLabel(serverMapValue)} (loading...)`, value: serverMapValue },
       ...mergedOptions
     ];
   }

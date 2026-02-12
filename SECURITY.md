@@ -26,6 +26,7 @@ The backend will use your provided secret if it's at least 32 characters long.
    - CSRF protection on all state-changing endpoints
    - Session validation against database on every request
    - Automatic session expiration (24 hours)
+   - **IMPORTANT**: Always use HTTPS/TLS in production to encrypt credentials in transit
 
 2. **HTTP Security Headers** (via Helmet)
    - Content Security Policy (CSP) - blocks XSS attacks

@@ -48,6 +48,8 @@ A secure, web-based admin panel for managing your BeamMP game server. Fully Dock
    
    After submitting, the panel will configure your server automatically.
 
+   **⚠️ Production Security**: For public/production deployments, always use HTTPS/TLS with a reverse proxy (Caddy, nginx, etc.) to encrypt credentials and session data in transit. See [DEPLOYMENT.md](DEPLOYMENT.md) for details.
+
 4. **Done!** Your BeamMP server is now running with a web admin panel.
 
 ## Configuration
