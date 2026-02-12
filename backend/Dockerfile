@@ -28,6 +28,9 @@ RUN npm run prisma:generate
 # Build TypeScript
 RUN npm run build
 
+# Prune dev dependencies for production
+RUN npm prune --omit=dev
+
 # Production stage
 FROM node:22-bullseye-slim
 
@@ -52,12 +55,8 @@ RUN apt-get update \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install production dependencies (keep dev for prisma CLI)
-RUN npm install --legacy-peer-deps
-
-# Copy generated Prisma client from builder
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Copy production node_modules from builder (pre-pruned)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist/
