@@ -1,6 +1,6 @@
 import { prisma } from '../index.js';
 import { createHash } from 'crypto';
-import { writeFile, mkdir, unlink, readdir, stat } from 'fs/promises';
+import { writeFile, mkdir, unlink, readdir, stat, readFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import AdmZip from 'adm-zip';
 import { readConfigFile } from './config.js';
@@ -230,6 +230,7 @@ export async function listMods(): Promise<
     sha256: string;
     uploadedAt: Date;
     uploadedBy: { id: string; username: string } | null;
+    isMissing: boolean;
   }>
 > {
   const mods = await prisma.modFile.findMany({
@@ -245,6 +246,7 @@ export async function listMods(): Promise<
           username: true,
         },
       },
+      isMissing: true,
     },
     orderBy: { uploadedAt: 'desc' },
   });
@@ -256,6 +258,7 @@ export async function listMods(): Promise<
     sha256: mod.sha256,
     uploadedAt: mod.uploadedAt,
     uploadedBy: mod.uploadedByUser,
+    isMissing: mod.isMissing,
   }));
 }
 
@@ -413,4 +416,98 @@ export async function upsertMapLabel(mapPath: string, label: string): Promise<{ 
   });
 
   return { mapPath: updated.mapPath, label: updated.label };
+}
+
+export async function syncModsWithFilesystem(): Promise<{
+  untrackedFiles: string[];
+  missingFiles: string[];
+  totalMods: number;
+}> {
+  const modsDir = await getModsDirectory();
+  const fileSystemMetas = await getModFileMetas();
+  
+  const filesystemFilenames = new Set(fileSystemMetas.map(m => m.filename));
+  
+  // Get all mods from database
+  const dbMods = await prisma.modFile.findMany({
+    select: { id: true, filename: true, isMissing: true },
+  });
+  
+  const dbFilenames = new Set(dbMods.map(m => m.filename));
+  
+  // Find untracked files (on filesystem but not in DB)
+  const untrackedFiles: string[] = [];
+  for (const filename of filesystemFilenames) {
+    if (!dbFilenames.has(filename)) {
+      untrackedFiles.push(filename);
+      
+      // Get file stats and create placeholder DB entry
+      try {
+        const filePath = join(modsDir, filename);
+        const fileStat = await stat(filePath);
+        
+        // Create untracked entry with a system user (using first OWNER or ADMIN)
+        const systemUser = await prisma.user.findFirst({
+          where: { role: { in: ['OWNER', 'ADMIN'] } },
+          orderBy: { createdAt: 'asc' },
+        });
+        
+        if (systemUser) {
+          // Compute SHA256 of the file for consistency
+          const fileBuffer = await readFile(filePath);
+          const sha256 = createHash('sha256').update(fileBuffer).digest('hex');
+          
+          await prisma.modFile.create({
+            data: {
+              filename,
+              originalName: filename.replace(/^\d+-/, ''), // Remove timestamp prefix if present
+              size: fileStat.size,
+              sha256,
+              uploadedBy: systemUser.id,
+              isMissing: false,
+            },
+          });
+        }
+      } catch (error) {
+        console.warn('[mods] Failed to create entry for untracked file:', filename, error);
+      }
+    }
+  }
+  
+  // Find missing files (in DB but not on filesystem)
+  const missingFiles: string[] = [];
+  for (const mod of dbMods) {
+    if (!filesystemFilenames.has(mod.filename) && !mod.isMissing) {
+      missingFiles.push(mod.filename);
+      
+      // Mark as missing in database
+      await prisma.modFile.update({
+        where: { id: mod.id },
+        data: { isMissing: true },
+      });
+    }
+  }
+  
+  // Unmark files that are back on the filesystem
+  const restoredFiles: string[] = [];
+  for (const mod of dbMods) {
+    if (filesystemFilenames.has(mod.filename) && mod.isMissing) {
+      restoredFiles.push(mod.filename);
+      
+      await prisma.modFile.update({
+        where: { id: mod.id },
+        data: { isMissing: false },
+      });
+    }
+  }
+  
+  if (restoredFiles.length > 0) {
+    console.log('[mods] Restored files from filesystem:', restoredFiles);
+  }
+  
+  return {
+    untrackedFiles,
+    missingFiles,
+    totalMods: dbFilenames.size + untrackedFiles.length,
+  };
 }

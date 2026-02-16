@@ -3,7 +3,7 @@ import { prisma } from '../index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { logAuditAction } from '../middleware/audit-logger.js';
 import { csrfProtection } from '../middleware/csrf.js';
-import { uploadMod, deleteMod, listMods } from '../services/mods.js';
+import { uploadMod, deleteMod, listMods, syncModsWithFilesystem } from '../services/mods.js';
 
 export async function modsRoutes(fastify: FastifyInstance) {
   // List mods (all authenticated users)
@@ -96,6 +96,45 @@ export async function modsRoutes(fastify: FastifyInstance) {
       } catch (error) {
         console.error('Failed to delete mod:', error);
         reply.code(500).send({ error: 'Failed to delete mod' });
+      }
+    }
+  );
+
+  // Sync mods with filesystem (Owner/Admin only)
+  fastify.post(
+    '/sync',
+    { preHandler: csrfProtection },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        if (!requireAuth(request, reply)) { return; }
+
+        const user = await prisma.user.findUnique({
+          where: { id: (request.user as any)?.sub },
+        });
+
+        if (!user || !['OWNER', 'ADMIN'].includes(user.role)) {
+          return reply.code(403).send({ error: 'Insufficient permissions' });
+        }
+
+        const result = await syncModsWithFilesystem();
+
+        await logAuditAction(
+          user.id,
+          'MOD_SYNC',
+          'mod',
+          null,
+          {
+            untrackedFiles: result.untrackedFiles.length,
+            missingFiles: result.missingFiles.length,
+            totalMods: result.totalMods,
+          },
+          request.ip
+        );
+
+        reply.code(200).send(result);
+      } catch (error) {
+        console.error('Failed to sync mods:', error);
+        reply.code(500).send({ error: 'Failed to sync mods with filesystem' });
       }
     }
   );

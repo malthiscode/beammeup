@@ -56,6 +56,7 @@ model ModFile {
   uploadedAt   DateTime  @default(now())
   uploadedBy   String
   uploadedByUser User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  isMissing    Boolean   @default(false)
 
   @@index([uploadedAt])
   @@map("mod_files")

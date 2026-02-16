@@ -27,9 +27,11 @@ const getApiBaseUrl = () => {
 
 class ApiClient {
   private client: AxiosInstance;
+  private baseURL: string;
 
   constructor() {
     const baseURL = getApiBaseUrl();
+    this.baseURL = baseURL;
     
     this.client = axios.create({
       baseURL,
@@ -173,17 +175,69 @@ class ApiClient {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await this.client.post('/mods/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress,
+    if (!onUploadProgress) {
+      const response = await this.client.post('/mods/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    }
+
+    const csrfToken = getCookie('csrf_token');
+    return await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${this.baseURL}/mods/upload`);
+      xhr.withCredentials = true;
+
+      if (csrfToken) {
+        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+      }
+
+      xhr.upload.onprogress = (event) => {
+        onUploadProgress({
+          loaded: event.loaded,
+          total: event.lengthComputable ? event.total : undefined,
+        });
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(xhr.responseText ? JSON.parse(xhr.responseText) : {});
+          } catch {
+            resolve({});
+          }
+          return;
+        }
+
+        let message = 'Upload failed';
+        try {
+          const data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+          if (data?.error) {
+            message = data.error;
+          }
+        } catch {
+          // Ignore JSON parse errors
+        }
+        reject({ response: { data: { error: message } } });
+      };
+
+      xhr.onerror = () => {
+        reject({ response: { data: { error: 'Upload failed' } } });
+      };
+
+      xhr.send(formData);
     });
-    return response.data;
   }
 
   async deleteMod(id: string) {
     const response = await this.client.delete(`/mods/${id}`);
+    return response.data;
+  }
+
+  async syncMods() {
+    const response = await this.client.post('/mods/sync', {});
     return response.data;
   }
 

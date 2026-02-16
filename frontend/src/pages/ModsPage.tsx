@@ -30,6 +30,8 @@ export function ModsPage() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const MAX_FILE_SIZE_MB = 2048; // Must match backend MAX_MOD_SIZE
 
@@ -236,11 +238,11 @@ export function ModsPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedModIds.length === mods.length && mods.length > 0) {
+    if (allSelected && filteredMods.length > 0) {
       setSelectedModIds([]);
       return;
     }
-    setSelectedModIds(mods.map((mod) => mod.id));
+    setSelectedModIds(filteredMods.map((mod) => mod.id));
   };
 
   const clearSelection = () => {
@@ -280,6 +282,32 @@ export function ModsPage() {
     setBulkDeleteConfirm(false);
     setSelectedModIds([]);
     await loadMods();
+  };
+
+  const handleSyncFilesystem = async () => {
+    setSyncing(true);
+    try {
+      const result = await api.syncMods();
+      
+      if (result.untrackedFiles?.length > 0 || result.missingFiles?.length > 0) {
+        let message = '';
+        if (result.untrackedFiles?.length > 0) {
+          message += `Found ${result.untrackedFiles.length} untracked file(s). `;
+        }
+        if (result.missingFiles?.length > 0) {
+          message += `Found ${result.missingFiles.length} missing file(s). `;
+        }
+        addNotification('Sync Complete', message.trim(), 'success');
+      } else {
+        addNotification('Sync Complete', 'Filesystem and database are in sync', 'success');
+      }
+      
+      await loadMods();
+    } catch (err: any) {
+      addNotification('Error', err.response?.data?.error || 'Sync failed', 'error');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const formatSize = (bytes: number) => {
@@ -327,7 +355,18 @@ export function ModsPage() {
   const pendingCount = filesWithStatus.filter(f => f.status === 'pending' || f.status === 'error').length;
   const uploadingCount = filesWithStatus.filter(f => f.status === 'uploading').length;
   const successCount = filesWithStatus.filter(f => f.status === 'success').length;
-  const allSelected = mods.length > 0 && selectedModIds.length === mods.length;
+  
+  const filteredMods = mods.filter(mod => {
+    const query = searchQuery.toLowerCase();
+    return (
+      mod.originalName.toLowerCase().includes(query) ||
+      mod.filename.toLowerCase().includes(query) ||
+      mod.uploadedBy?.username.toLowerCase().includes(query) ||
+      mod.sha256.toLowerCase().includes(query)
+    );
+  });
+  
+  const allSelected = filteredMods.length > 0 && filteredMods.every((mod) => selectedModIds.includes(mod.id));
   const isAdmin = ['OWNER', 'ADMIN'].includes(user?.role);
 
   return (
@@ -485,6 +524,16 @@ export function ModsPage() {
             <h2 className="h3">Installed Mods</h2>
             <div className="flex items-center gap-3">
               <span className="badge badge-warning">{mods.length} Total</span>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleSyncFilesystem}
+                  className="btn btn-secondary btn-sm text-xs"
+                  disabled={syncing || loading || bulkDeleting}
+                >
+                  {syncing ? 'Syncing...' : 'Refresh Filesystem'}
+                </button>
+              )}
               {isAdmin && selectedModIds.length > 0 && !bulkDeleteConfirm && (
                 <button
                   type="button"
@@ -527,6 +576,34 @@ export function ModsPage() {
               )}
             </div>
           </div>
+          
+          {mods.length > 0 && (
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Search mods by name, file, author, or SHA256..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 bg-input border border-subtle rounded-lg text-white placeholder-muted focus:outline-none focus:border-primary transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-white transition-colors"
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {filteredMods.length !== mods.length && (
+                <span className="text-sm text-muted">{filteredMods.length} of {mods.length} shown</span>
+              )}
+            </div>
+          )}
+          
           {loading ? (
             <div className="card px-6 py-4">Loading...</div>
           ) : mods.length === 0 ? (
@@ -542,7 +619,7 @@ export function ModsPage() {
                           type="checkbox"
                           checked={allSelected}
                           onChange={toggleSelectAll}
-                          disabled={bulkDeleting || mods.length === 0}
+                          disabled={bulkDeleting || filteredMods.length === 0}
                         />
                       </th>
                     )}
@@ -551,11 +628,12 @@ export function ModsPage() {
                     <th className="pb-3 px-4">SHA256</th>
                     <th className="pb-3 px-4">Uploaded By</th>
                     <th className="pb-3 px-4">Date</th>
+                    <th className="pb-3 px-4">Status</th>
                     {isAdmin && <th className="pb-3 px-4">Action</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {mods.map((mod) => (
+                  {filteredMods.map((mod) => (
                     <tr key={mod.id} className="border-b border-subtle hover:bg-hover transition-colors">
                       {isAdmin && (
                         <td className="py-3 px-4">
@@ -575,6 +653,13 @@ export function ModsPage() {
                       <td className="py-3 px-4">{mod.uploadedBy?.username || 'Unknown'}</td>
                       <td className="py-3 px-4 text-muted text-xs">
                         {formatDate(mod.uploadedAt)}
+                      </td>
+                      <td className="py-3 px-4">
+                        {mod.isMissing ? (
+                          <span className="text-xs badge badge-danger">Missing</span>
+                        ) : (
+                          <span className="text-xs badge badge-success">OK</span>
+                        )}
                       </td>
                       {isAdmin && (
                         <td className="py-3 px-4">
