@@ -27,17 +27,39 @@ export function DashboardPage() {
       const data = await api.getServerStatus();
       setStatus(data);
       
-      // Also load current map
+      // Load current map with label
       const config = await api.getCurrentConfig();
       if (config?.General?.Map) {
         const mapPath = config.General.Map;
-        const formatted = mapPath
-          .replace(/^\/?levels\//i, '')
-          .replace(/\/info\.json$/i, '')
-          .replace(/[_-]+/g, ' ')
-          .trim()
-          .replace(/\b\w/g, (char: string) => char.toUpperCase());
-        setCurrentMap(formatted || 'None');
+        
+        // Try to get custom label from available maps
+        try {
+          const mapsData = await api.getAvailableMaps();
+          const maps = Array.isArray(mapsData?.maps) ? mapsData.maps : [];
+          const mapEntry = maps.find((m: any) => m.value === mapPath);
+          
+          if (mapEntry?.label) {
+            setCurrentMap(mapEntry.label);
+          } else {
+            // Fallback to formatted path if no label found
+            const formatted = mapPath
+              .replace(/^\/?levels\//i, '')
+              .replace(/\/info\.json$/i, '')
+              .replace(/[_-]+/g, ' ')
+              .trim()
+              .replace(/\b\w/g, (char: string) => char.toUpperCase());
+            setCurrentMap(formatted || 'None');
+          }
+        } catch (labelError) {
+          // Fallback if label fetch fails
+          const formatted = mapPath
+            .replace(/^\/?levels\//i, '')
+            .replace(/\/info\.json$/i, '')
+            .replace(/[_-]+/g, ' ')
+            .trim()
+            .replace(/\b\w/g, (char: string) => char.toUpperCase());
+          setCurrentMap(formatted || 'None');
+        }
       }
     } catch (err: any) {
       addNotification('Error', 'Failed to load server status', 'error');

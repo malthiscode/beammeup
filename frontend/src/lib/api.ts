@@ -27,11 +27,9 @@ const getApiBaseUrl = () => {
 
 class ApiClient {
   private client: AxiosInstance;
-  private baseURL: string;
 
   constructor() {
     const baseURL = getApiBaseUrl();
-    this.baseURL = baseURL;
     
     this.client = axios.create({
       baseURL,
@@ -184,62 +182,30 @@ class ApiClient {
       return response.data;
     }
 
-    const csrfToken = getCookie('csrf_token');
-    return await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${this.baseURL}/mods/upload`);
-      xhr.withCredentials = true;
-
-      if (csrfToken) {
-        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    // Use Axios with onUploadProgress for more reliable tracking
+    try {
+      const response = await this.client.post('/mods/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent: any) => {
+          const loaded = progressEvent.loaded || 0;
+          const total = progressEvent.total || file.size;
+          
+          onUploadProgress({
+            loaded,
+            total: total > 0 ? total : file.size,
+          });
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      // Rethrow with consistent format
+      if (error.response?.data?.error) {
+        throw { response: { data: { error: error.response.data.error } } };
       }
-
-      // Use the file size as the total since FormData doesn't expose Content-Length accurately
-      const totalSize = file.size;
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          onUploadProgress({
-            loaded: event.loaded,
-            total: event.total,
-          });
-        } else {
-          // Fallback to file size if lengthComputable is false
-          onUploadProgress({
-            loaded: event.loaded,
-            total: totalSize,
-          });
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(xhr.responseText ? JSON.parse(xhr.responseText) : {});
-          } catch {
-            resolve({});
-          }
-          return;
-        }
-
-        let message = 'Upload failed';
-        try {
-          const data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-          if (data?.error) {
-            message = data.error;
-          }
-        } catch {
-          // Ignore JSON parse errors
-        }
-        reject({ response: { data: { error: message } } });
-      };
-
-      xhr.onerror = () => {
-        reject({ response: { data: { error: 'Upload failed' } } });
-      };
-
-      xhr.send(formData);
-    });
+      throw { response: { data: { error: 'Upload failed' } } };
+    }
   }
 
   async deleteMod(id: string) {

@@ -362,10 +362,10 @@ export function ModsPage() {
     .filter(mod => {
       const query = searchQuery.toLowerCase();
       return (
-        mod.originalName.toLowerCase().includes(query) ||
-        mod.filename.toLowerCase().includes(query) ||
-        mod.uploadedBy?.username.toLowerCase().includes(query) ||
-        mod.sha256.toLowerCase().includes(query)
+        mod.originalName?.toLowerCase().includes(query) ||
+        mod.filename?.toLowerCase().includes(query) ||
+        (mod.uploadedBy?.username ?? '').toLowerCase().includes(query) ||
+        mod.sha256?.toLowerCase().includes(query)
       );
     })
     .sort((a, b) => {
