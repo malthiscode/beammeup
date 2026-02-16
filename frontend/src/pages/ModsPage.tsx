@@ -88,6 +88,7 @@ export function ModsPage() {
         file,
         status: 'pending',
         id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+        progress: 0,
       });
     }
 
@@ -228,6 +229,10 @@ export function ModsPage() {
     try {
       setDeletingIds((prev) => [...prev, id]);
       await api.deleteMod(id);
+      
+      // Clear map cache so deleted mod maps don't show in dropdown
+      localStorage.removeItem('beammeup_mod_maps_cache');
+      
       addNotification('Success', 'Mod deleted', 'success');
       setDeleteConfirm(null);
       setSelectedModIds((prev) => prev.filter((selectedId) => selectedId !== id));
@@ -279,6 +284,9 @@ export function ModsPage() {
     }
 
     if (successCount > 0) {
+      // Clear map cache so deleted mod maps don't show in dropdown
+      localStorage.removeItem('beammeup_mod_maps_cache');
+      
       addNotification('Success', `Deleted ${successCount} mod(s)`, 'success');
     }
 
@@ -532,14 +540,14 @@ export function ModsPage() {
                         <div className={`text-xs ${getStatusColor(fileWithStatus.status)} flex-shrink-0 min-w-[80px]`}>
                           {fileWithStatus.status === 'pending' && 'Pending'}
                           {fileWithStatus.status === 'uploading' && (
-                            <div className="flex items-center gap-1">
-                              <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                            <div className="flex flex-col items-end gap-0.5 min-w-[100px]">
+                              <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-blue-500 transition-all duration-300"
                                   style={{ width: `${fileWithStatus.progress || 0}%` }}
                                 />
                               </div>
-                              <span className="text-[10px]">{fileWithStatus.progress || 0}%</span>
+                              <span className="text-[10px] text-blue-400 font-medium">{fileWithStatus.progress || 0}%</span>
                             </div>
                           )}
                           {fileWithStatus.status === 'success' && 'Success'}
