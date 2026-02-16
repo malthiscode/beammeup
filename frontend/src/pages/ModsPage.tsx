@@ -525,33 +525,33 @@ export function ModsPage() {
                           {getStatusIcon(fileWithStatus.status)}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-white truncate">
-                            {fileWithStatus.file.name}
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="text-sm font-medium text-white truncate">
+                              {fileWithStatus.file.name}
+                            </div>
+                            <div className={`text-xs ${getStatusColor(fileWithStatus.status)} flex-shrink-0 font-medium`}>
+                              {fileWithStatus.status === 'pending' && 'Pending'}
+                              {fileWithStatus.status === 'uploading' && `${fileWithStatus.progress || 0}%`}
+                              {fileWithStatus.status === 'success' && 'Success'}
+                              {fileWithStatus.status === 'error' && 'Failed'}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted">
+                          <div className="text-xs text-muted mb-1">
                             {formatSize(fileWithStatus.file.size)}
                           </div>
+                          {fileWithStatus.status === 'uploading' && (
+                            <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-500 transition-all duration-300"
+                                style={{ width: `${fileWithStatus.progress || 0}%` }}
+                              />
+                            </div>
+                          )}
                           {fileWithStatus.error && (
                             <div className="text-xs text-red-400 mt-1">
                               {fileWithStatus.error}
                             </div>
                           )}
-                        </div>
-                        <div className={`text-xs ${getStatusColor(fileWithStatus.status)} flex-shrink-0 min-w-[80px]`}>
-                          {fileWithStatus.status === 'pending' && 'Pending'}
-                          {fileWithStatus.status === 'uploading' && (
-                            <div className="flex flex-col items-end gap-0.5 min-w-[100px]">
-                              <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-blue-500 transition-all duration-300"
-                                  style={{ width: `${fileWithStatus.progress || 0}%` }}
-                                />
-                              </div>
-                              <span className="text-[10px] text-blue-400 font-medium">{fileWithStatus.progress || 0}%</span>
-                            </div>
-                          )}
-                          {fileWithStatus.status === 'success' && 'Success'}
-                          {fileWithStatus.status === 'error' && 'Failed'}
                         </div>
                       </div>
                       {(fileWithStatus.status === 'pending' || fileWithStatus.status === 'error') && !uploading && (
