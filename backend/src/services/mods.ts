@@ -146,6 +146,15 @@ export async function uploadMod(
   // Compute SHA256
   const sha256 = createHash('sha256').update(buffer).digest('hex');
 
+  // Check for duplicate mod (same file already uploaded)
+  const existingMod = await prisma.modFile.findUnique({
+    where: { sha256 },
+  });
+  
+  if (existingMod) {
+    throw new Error(`Duplicate: This mod (${existingMod.originalName}) was already uploaded on ${existingMod.uploadedAt.toLocaleDateString()}`);
+  }
+
   // Generate safe filename
   const storedFilename = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '')}`;
   const modsDir = await getModsDirectory();

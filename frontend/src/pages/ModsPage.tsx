@@ -175,7 +175,12 @@ export function ModsPage() {
           )
         );
       } catch (err: any) {
-        const errorMsg = err.response?.data?.error || 'Upload failed';
+        let errorMsg = err.response?.data?.error || 'Upload failed';
+        
+        // Highlight duplicate error
+        if (errorMsg.includes('Duplicate')) {
+          errorMsg = `⚠️ ${errorMsg}. Skipping.`;
+        }
         
         // Update status to error
         setFilesWithStatus(prev =>

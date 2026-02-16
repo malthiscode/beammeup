@@ -52,7 +52,7 @@ model ModFile {
   filename     String    @unique
   originalName String
   size         Int
-  sha256       String
+  sha256       String    @unique
   uploadedAt   DateTime  @default(now())
   uploadedBy   String
   uploadedByUser User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
