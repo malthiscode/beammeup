@@ -217,6 +217,12 @@ class ApiClient {
 
       // Handle completion
       xhr.addEventListener('load', () => {
+        // Ensure progress reaches 100% even if progress events didn't fire (for very small/fast uploads)
+        onUploadProgress({
+          loaded: file.size,
+          total: file.size,
+        });
+        
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
@@ -240,6 +246,11 @@ class ApiClient {
 
       // Handle errors
       xhr.addEventListener('error', () => {
+        // Ensure progress reaches 100% even on error
+        onUploadProgress({
+          loaded: file.size,
+          total: file.size,
+        });
         reject({ response: { data: { error: 'Network error during upload' } } });
       }, false);
 
