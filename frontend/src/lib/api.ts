@@ -170,8 +170,11 @@ class ApiClient {
   }
 
   async uploadMod(file: File, onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void) {
+    console.log('[uploadMod] Called with file:', file.name, 'size:', file.size, 'hasCallback:', !!onUploadProgress);
+    
     // If no progress callback, use simple Axios POST
     if (!onUploadProgress) {
+      console.log('[uploadMod] No callback, using simple Axios');
       const formData = new FormData();
       formData.append('file', file);
       const response = await this.client.post('/mods/upload', formData, {
@@ -183,6 +186,7 @@ class ApiClient {
     }
 
     // Use XMLHttpRequest for reliable progress tracking
+    console.log('[uploadMod] Using XHR with progress callback');
     const formData = new FormData();
     formData.append('file', file);
     const csrfToken = getCookie('csrf_token');
@@ -193,6 +197,7 @@ class ApiClient {
       // Open connection
       xhr.open('POST', '/api/mods/upload', true);
       xhr.withCredentials = true;
+      console.log('[XHR] Connection opened');
       
       // Set CSRF token
       if (csrfToken) {
@@ -201,6 +206,12 @@ class ApiClient {
 
       // Track upload progress
       xhr.upload.addEventListener('progress', (event) => {
+        console.log('[XHR progress]', {
+          loaded: event.loaded,
+          total: event.total,
+          lengthComputable: event.lengthComputable,
+        });
+        
         if (event.lengthComputable) {
           onUploadProgress({
             loaded: event.loaded,
@@ -217,11 +228,14 @@ class ApiClient {
 
       // Handle completion
       xhr.addEventListener('load', () => {
+        console.log('[XHR load] Status:', xhr.status);
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+            console.log('[XHR] Success:', response);
             resolve(response);
           } catch (e) {
+            console.log('[XHR] Parse error:', e);
             resolve({});
           }
         } else {
@@ -234,20 +248,24 @@ class ApiClient {
           } catch (e) {
             // ignore
           }
+          console.log('[XHR] Error:', errorMsg);
           reject({ response: { data: { error: errorMsg } } });
         }
       }, false);
 
       // Handle errors
       xhr.addEventListener('error', () => {
+        console.log('[XHR error] Network error');
         reject({ response: { data: { error: 'Network error during upload' } } });
       }, false);
 
       xhr.addEventListener('abort', () => {
+        console.log('[XHR abort] Upload cancelled');
         reject({ response: { data: { error: 'Upload cancelled' } } });
       }, false);
 
       // Send the request
+      console.log('[XHR] Sending file...');
       xhr.send(formData);
     });
   }
