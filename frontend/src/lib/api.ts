@@ -194,11 +194,22 @@ class ApiClient {
         xhr.setRequestHeader('X-CSRF-Token', csrfToken);
       }
 
+      // Use the file size as the total since FormData doesn't expose Content-Length accurately
+      const totalSize = file.size;
+
       xhr.upload.onprogress = (event) => {
-        onUploadProgress({
-          loaded: event.loaded,
-          total: event.lengthComputable ? event.total : undefined,
-        });
+        if (event.lengthComputable) {
+          onUploadProgress({
+            loaded: event.loaded,
+            total: event.total,
+          });
+        } else {
+          // Fallback to file size if lengthComputable is false
+          onUploadProgress({
+            loaded: event.loaded,
+            total: totalSize,
+          });
+        }
       };
 
       xhr.onload = () => {

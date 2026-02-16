@@ -32,6 +32,8 @@ export function ModsPage() {
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortColumn, setSortColumn] = useState<'name' | 'size' | 'sha256' | 'author' | 'date' | 'status'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const MAX_FILE_SIZE_MB = 2048; // Must match backend MAX_MOD_SIZE
 
@@ -356,15 +358,64 @@ export function ModsPage() {
   const uploadingCount = filesWithStatus.filter(f => f.status === 'uploading').length;
   const successCount = filesWithStatus.filter(f => f.status === 'success').length;
   
-  const filteredMods = mods.filter(mod => {
-    const query = searchQuery.toLowerCase();
-    return (
-      mod.originalName.toLowerCase().includes(query) ||
-      mod.filename.toLowerCase().includes(query) ||
-      mod.uploadedBy?.username.toLowerCase().includes(query) ||
-      mod.sha256.toLowerCase().includes(query)
-    );
-  });
+  const filteredMods = mods
+    .filter(mod => {
+      const query = searchQuery.toLowerCase();
+      return (
+        mod.originalName.toLowerCase().includes(query) ||
+        mod.filename.toLowerCase().includes(query) ||
+        mod.uploadedBy?.username.toLowerCase().includes(query) ||
+        mod.sha256.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      let aVal: any = null;
+      let bVal: any = null;
+
+      switch (sortColumn) {
+        case 'name':
+          aVal = a.originalName.toLowerCase();
+          bVal = b.originalName.toLowerCase();
+          break;
+        case 'size':
+          aVal = a.size;
+          bVal = b.size;
+          break;
+        case 'sha256':
+          aVal = a.sha256.toLowerCase();
+          bVal = b.sha256.toLowerCase();
+          break;
+        case 'author':
+          aVal = (a.uploadedBy?.username || '').toLowerCase();
+          bVal = (b.uploadedBy?.username || '').toLowerCase();
+          break;
+        case 'date':
+          aVal = new Date(a.uploadedAt).getTime();
+          bVal = new Date(b.uploadedAt).getTime();
+          break;
+        case 'status':
+          aVal = a.isMissing ? 1 : 0;
+          bVal = b.isMissing ? 1 : 0;
+          break;
+      }
+
+      if (aVal === null || bVal === null) return 0;
+      
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      
+      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+  const handleSort = (column: 'name' | 'size' | 'sha256' | 'author' | 'date' | 'status') => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
   
   const allSelected = filteredMods.length > 0 && filteredMods.every((mod) => selectedModIds.includes(mod.id));
   const isAdmin = ['OWNER', 'ADMIN'].includes(user?.role);
@@ -623,12 +674,42 @@ export function ModsPage() {
                         />
                       </th>
                     )}
-                    <th className="pb-3 px-4">Filename</th>
-                    <th className="pb-3 px-4">Size</th>
-                    <th className="pb-3 px-4">SHA256</th>
-                    <th className="pb-3 px-4">Uploaded By</th>
-                    <th className="pb-3 px-4">Date</th>
-                    <th className="pb-3 px-4">Status</th>
+                    <th 
+                      className="pb-3 px-4 cursor-pointer hover:text-orange-400 transition-colors select-none"
+                      onClick={() => handleSort('name')}
+                    >
+                      Filename {sortColumn === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th 
+                      className="pb-3 px-4 cursor-pointer hover:text-orange-400 transition-colors select-none"
+                      onClick={() => handleSort('size')}
+                    >
+                      Size {sortColumn === 'size' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th 
+                      className="pb-3 px-4 cursor-pointer hover:text-orange-400 transition-colors select-none"
+                      onClick={() => handleSort('sha256')}
+                    >
+                      SHA256 {sortColumn === 'sha256' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th 
+                      className="pb-3 px-4 cursor-pointer hover:text-orange-400 transition-colors select-none"
+                      onClick={() => handleSort('author')}
+                    >
+                      Uploaded By {sortColumn === 'author' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th 
+                      className="pb-3 px-4 cursor-pointer hover:text-orange-400 transition-colors select-none"
+                      onClick={() => handleSort('date')}
+                    >
+                      Date {sortColumn === 'date' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th 
+                      className="pb-3 px-4 cursor-pointer hover:text-orange-400 transition-colors select-none"
+                      onClick={() => handleSort('status')}
+                    >
+                      Status {sortColumn === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
                     {isAdmin && <th className="pb-3 px-4">Action</th>}
                   </tr>
                 </thead>
