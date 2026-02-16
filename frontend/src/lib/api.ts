@@ -170,42 +170,86 @@ class ApiClient {
   }
 
   async uploadMod(file: File, onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void) {
+    // If no progress callback, use simple Axios POST
+    if (!onUploadProgress) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await this.client.post('/mods/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    }
+
+    // Use XMLHttpRequest for reliable progress tracking
     const formData = new FormData();
     formData.append('file', file);
+    const csrfToken = getCookie('csrf_token');
 
-    if (!onUploadProgress) {
-      const response = await this.client.post('/mods/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    }
-
-    // Use Axios with onUploadProgress for more reliable tracking
-    try {
-      const response = await this.client.post('/mods/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent: any) => {
-          const loaded = progressEvent.loaded || 0;
-          const total = progressEvent.total || file.size;
-          
-          onUploadProgress({
-            loaded,
-            total: total > 0 ? total : file.size,
-          });
-        },
-      });
-      return response.data;
-    } catch (error: any) {
-      // Rethrow with consistent format
-      if (error.response?.data?.error) {
-        throw { response: { data: { error: error.response.data.error } } };
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // Open connection
+      xhr.open('POST', '/api/mods/upload', true);
+      xhr.withCredentials = true;
+      
+      // Set CSRF token
+      if (csrfToken) {
+        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
       }
-      throw { response: { data: { error: 'Upload failed' } } };
-    }
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          onUploadProgress({
+            loaded: event.loaded,
+            total: event.total,
+          });
+        } else {
+          // Fallback: use file size as total
+          onUploadProgress({
+            loaded: event.loaded,
+            total: file.size,
+          });
+        }
+      }, false);
+
+      // Handle completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+            resolve(response);
+          } catch (e) {
+            resolve({});
+          }
+        } else {
+          let errorMsg = 'Upload failed';
+          try {
+            const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+            if (errorData?.error) {
+              errorMsg = errorData.error;
+            }
+          } catch (e) {
+            // ignore
+          }
+          reject({ response: { data: { error: errorMsg } } });
+        }
+      }, false);
+
+      // Handle errors
+      xhr.addEventListener('error', () => {
+        reject({ response: { data: { error: 'Network error during upload' } } });
+      }, false);
+
+      xhr.addEventListener('abort', () => {
+        reject({ response: { data: { error: 'Upload cancelled' } } });
+      }, false);
+
+      // Send the request
+      xhr.send(formData);
+    });
   }
 
   async deleteMod(id: string) {

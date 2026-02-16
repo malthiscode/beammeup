@@ -155,6 +155,8 @@ export function ModsPage() {
             ? Math.min(100, Math.round((progressEvent.loaded * 100) / totalBytes))
             : 0;
           
+          console.log(`[Upload Progress] ${fileWithStatus.file.name}: ${percentCompleted}% (${progressEvent.loaded}/${totalBytes})`);
+          
           setFilesWithStatus(prev =>
             prev.map(f =>
               f.id === fileWithStatus.id
