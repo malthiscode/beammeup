@@ -371,14 +371,7 @@ export async function listModMaps(): Promise<{
     }
   }
 
-  console.log('[mods] Map scan complete:', {
-    mapsFound: maps.size,
-    scannedFiles,
-    skippedLarge,
-    timedOut,
-    duration: `${Date.now() - start}ms`,
-    cachedFiles: filenames.length - scannedFiles,
-  });
+
 
   const mapValues = Array.from(maps).sort((a, b) => a.localeCompare(b));
   const labels = await prisma.mapLabel.findMany({
@@ -500,10 +493,7 @@ export async function syncModsWithFilesystem(): Promise<{
       });
     }
   }
-  
-  if (restoredFiles.length > 0) {
-    console.log('[mods] Restored files from filesystem:', restoredFiles);
-  }
+
   
   return {
     untrackedFiles,

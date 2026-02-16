@@ -127,7 +127,7 @@ export function ConfigPage() {
               cachedAt: new Date().toISOString(),
             }));
           } catch (error) {
-            console.warn('[ConfigPage] Failed to cache mod maps:', error);
+            // Caching failed silently
           }
           
           if (result?.timedOut || result?.skippedLarge > 0) {
@@ -141,7 +141,7 @@ export function ConfigPage() {
         }
         // Cache is valid, no loading state needed
       } catch (error) {
-        console.error('[ConfigPage] Failed to check map scan status:', error);
+        // Error checking map scan status
         addNotification('Warning', 'Map list could not be refreshed from mods', 'warning');
         setLoadingMaps(false);
       }
@@ -261,8 +261,8 @@ export function ConfigPage() {
           localStorage.setItem('beammeup_mod_maps_cache', JSON.stringify(cachedData));
         }
       } catch (error) {
-        console.warn('[ConfigPage] Failed to update cached mod maps:', error);
-      }
+          // Failed to update cache silently
+        }
       
       addNotification('Success', 'Map label updated', 'success');
     } catch (err: any) {

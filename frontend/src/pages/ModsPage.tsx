@@ -133,14 +133,12 @@ export function ModsPage() {
 
   const handleUploadAll = async () => {
     const pendingFiles = filesWithStatus.filter(f => f.status === 'pending' || f.status === 'error');
-    console.log('[handleUploadAll] Starting upload for', pendingFiles.length, 'files');
     if (pendingFiles.length === 0) return;
 
     setUploading(true);
     let successCount = 0;
 
     for (const fileWithStatus of pendingFiles) {
-      console.log('[handleUploadAll] Uploading file:', fileWithStatus.file.name);
       
       // Update status to uploading
       setFilesWithStatus(prev =>
@@ -152,14 +150,11 @@ export function ModsPage() {
       );
 
       try {
-        console.log('[handleUploadAll] Calling api.uploadMod with callback');
         await api.uploadMod(fileWithStatus.file, (progressEvent) => {
           const totalBytes = progressEvent.total || fileWithStatus.file.size;
           const percentCompleted = totalBytes > 0
             ? Math.min(100, Math.round((progressEvent.loaded * 100) / totalBytes))
             : 0;
-          
-          console.log(`[Upload Progress] ${fileWithStatus.file.name}: ${percentCompleted}% (${progressEvent.loaded}/${totalBytes})`);
           
           setFilesWithStatus(prev =>
             prev.map(f =>
@@ -169,7 +164,6 @@ export function ModsPage() {
             )
           );
         });
-        console.log('[handleUploadAll] Upload complete for:', fileWithStatus.file.name);
         successCount += 1;
         
         // Update status to success
@@ -181,7 +175,6 @@ export function ModsPage() {
           )
         );
       } catch (err: any) {
-        console.log('[handleUploadAll] Error uploading:', err);
         const errorMsg = err.response?.data?.error || 'Upload failed';
         
         // Update status to error
@@ -196,7 +189,6 @@ export function ModsPage() {
     }
 
     setUploading(false);
-    console.log('[handleUploadAll] Complete. Success:', successCount, 'Failed:', pendingFiles.length - successCount);
 
     if (successCount > 0) {
       addNotification('Success', `Uploaded ${successCount} mod(s) successfully`, 'success');
