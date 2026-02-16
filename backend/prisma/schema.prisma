@@ -61,6 +61,20 @@ model ModFile {
   @@map("mod_files")
 }
 
+model ModMapIndex {
+  id          String   @id @default(cuid())
+  modFilename String
+  modSize     Int
+  modMtime    DateTime
+  mapPath     String
+  createdAt   DateTime @default(now())
+
+  @@index([modFilename])
+  @@index([mapPath])
+  @@unique([modFilename, modSize, modMtime, mapPath])
+  @@map("mod_map_index")
+}
+
 model MapLabel {
   id        String   @id @default(cuid())
   mapPath   String   @unique
