@@ -26,6 +26,10 @@ export function ModsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedModIds, setSelectedModIds] = useState<string[]>([]);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   const MAX_FILE_SIZE_MB = 2048; // Must match backend MAX_MOD_SIZE
 
@@ -38,6 +42,10 @@ export function ModsPage() {
   useEffect(() => {
     loadMods();
   }, []);
+
+  useEffect(() => {
+    setSelectedModIds((prev) => prev.filter((id) => mods.some((mod) => mod.id === id)));
+  }, [mods]);
 
   const loadMods = async () => {
     try {
@@ -138,8 +146,9 @@ export function ModsPage() {
 
       try {
         await api.uploadMod(fileWithStatus.file, (progressEvent) => {
-          const percentCompleted = progressEvent.total 
-            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          const totalBytes = progressEvent.total || fileWithStatus.file.size;
+          const percentCompleted = totalBytes > 0
+            ? Math.min(100, Math.round((progressEvent.loaded * 100) / totalBytes))
             : 0;
           
           setFilesWithStatus(prev =>
@@ -207,13 +216,70 @@ export function ModsPage() {
 
   const handleDelete = async (id: string) => {
     try {
+      setDeletingIds((prev) => [...prev, id]);
       await api.deleteMod(id);
       addNotification('Success', 'Mod deleted', 'success');
       setDeleteConfirm(null);
+      setSelectedModIds((prev) => prev.filter((selectedId) => selectedId !== id));
       await loadMods();
     } catch (err: any) {
       addNotification('Error', err.response?.data?.error || 'Delete failed', 'error');
+    } finally {
+      setDeletingIds((prev) => prev.filter((deleteId) => deleteId !== id));
     }
+  };
+
+  const toggleSelectMod = (id: string) => {
+    setSelectedModIds((prev) =>
+      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedModIds.length === mods.length && mods.length > 0) {
+      setSelectedModIds([]);
+      return;
+    }
+    setSelectedModIds(mods.map((mod) => mod.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedModIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedModIds.length === 0) return;
+    setBulkDeleting(true);
+    setDeleteConfirm(null);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const id of selectedModIds) {
+      try {
+        setDeletingIds((prev) => [...prev, id]);
+        await api.deleteMod(id);
+        successCount += 1;
+      } catch (err: any) {
+        failCount += 1;
+        addNotification('Error', err.response?.data?.error || 'Delete failed', 'error');
+      } finally {
+        setDeletingIds((prev) => prev.filter((deleteId) => deleteId !== id));
+      }
+    }
+
+    if (successCount > 0) {
+      addNotification('Success', `Deleted ${successCount} mod(s)`, 'success');
+    }
+
+    if (failCount > 0) {
+      addNotification('Warning', `${failCount} mod(s) failed to delete`, 'warning');
+    }
+
+    setBulkDeleting(false);
+    setBulkDeleteConfirm(false);
+    setSelectedModIds([]);
+    await loadMods();
   };
 
   const formatSize = (bytes: number) => {
@@ -261,6 +327,8 @@ export function ModsPage() {
   const pendingCount = filesWithStatus.filter(f => f.status === 'pending' || f.status === 'error').length;
   const uploadingCount = filesWithStatus.filter(f => f.status === 'uploading').length;
   const successCount = filesWithStatus.filter(f => f.status === 'success').length;
+  const allSelected = mods.length > 0 && selectedModIds.length === mods.length;
+  const isAdmin = ['OWNER', 'ADMIN'].includes(user?.role);
 
   return (
     <Layout>
@@ -270,7 +338,7 @@ export function ModsPage() {
           <p className="subtitle mt-1">Upload and manage server mod files</p>
         </div>
 
-        {['OWNER', 'ADMIN'].includes(user?.role) && (
+        {isAdmin && (
           <div className="card-lg space-y-4">
             <h2 className="h3">Upload Mods</h2>
             
@@ -415,7 +483,49 @@ export function ModsPage() {
         <div className="card-lg space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="h3">Installed Mods</h2>
-            <span className="badge badge-warning">{mods.length} Total</span>
+            <div className="flex items-center gap-3">
+              <span className="badge badge-warning">{mods.length} Total</span>
+              {isAdmin && selectedModIds.length > 0 && !bulkDeleteConfirm && (
+                <button
+                  type="button"
+                  onClick={() => setBulkDeleteConfirm(true)}
+                  className="btn btn-danger btn-sm text-xs"
+                  disabled={bulkDeleting}
+                >
+                  Delete Selected ({selectedModIds.length})
+                </button>
+              )}
+              {isAdmin && bulkDeleteConfirm && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    className="btn btn-danger btn-sm text-xs"
+                    disabled={bulkDeleting}
+                  >
+                    Confirm Delete ({selectedModIds.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteConfirm(false)}
+                    className="btn btn-secondary btn-sm text-xs"
+                    disabled={bulkDeleting}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+              {isAdmin && selectedModIds.length > 0 && !bulkDeleteConfirm && (
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="btn btn-secondary btn-sm text-xs"
+                  disabled={bulkDeleting}
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
           </div>
           {loading ? (
             <div className="card px-6 py-4">Loading...</div>
@@ -426,17 +536,37 @@ export function ModsPage() {
               <table className="table">
                 <thead className="text-left text-secondary border-b border-primary">
                   <tr>
+                    {isAdmin && (
+                      <th className="pb-3 px-4 w-8">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={toggleSelectAll}
+                          disabled={bulkDeleting || mods.length === 0}
+                        />
+                      </th>
+                    )}
                     <th className="pb-3 px-4">Filename</th>
                     <th className="pb-3 px-4">Size</th>
                     <th className="pb-3 px-4">SHA256</th>
                     <th className="pb-3 px-4">Uploaded By</th>
                     <th className="pb-3 px-4">Date</th>
-                    {['OWNER', 'ADMIN'].includes(user?.role) && <th className="pb-3 px-4">Action</th>}
+                    {isAdmin && <th className="pb-3 px-4">Action</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {mods.map((mod) => (
                     <tr key={mod.id} className="border-b border-subtle hover:bg-hover transition-colors">
+                      {isAdmin && (
+                        <td className="py-3 px-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedModIds.includes(mod.id)}
+                            onChange={() => toggleSelectMod(mod.id)}
+                            disabled={bulkDeleting || deletingIds.includes(mod.id)}
+                          />
+                        </td>
+                      )}
                       <td className="py-3 px-4 font-medium text-white">{mod.originalName}</td>
                       <td className="py-3 px-4 text-muted">{formatSize(mod.size)}</td>
                       <td className="py-3 px-4 font-mono text-xs text-muted" title={mod.sha256}>
@@ -446,19 +576,21 @@ export function ModsPage() {
                       <td className="py-3 px-4 text-muted text-xs">
                         {formatDate(mod.uploadedAt)}
                       </td>
-                      {['OWNER', 'ADMIN'].includes(user?.role) && (
+                      {isAdmin && (
                         <td className="py-3 px-4">
                           {deleteConfirm === mod.id ? (
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleDelete(mod.id)}
                                 className="btn btn-danger btn-sm text-xs"
+                                disabled={bulkDeleting || deletingIds.includes(mod.id)}
                               >
                                 Confirm
                               </button>
                               <button
                                 onClick={() => setDeleteConfirm(null)}
                                 className="btn btn-secondary btn-sm text-xs"
+                                disabled={bulkDeleting}
                               >
                                 Cancel
                               </button>
@@ -467,6 +599,7 @@ export function ModsPage() {
                             <button
                               onClick={() => setDeleteConfirm(mod.id)}
                               className="btn btn-danger btn-sm text-xs"
+                              disabled={bulkDeleting || deletingIds.includes(mod.id)}
                             >
                               Delete
                             </button>
