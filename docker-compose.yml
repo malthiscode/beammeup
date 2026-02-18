@@ -5,6 +5,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: beammeup-backend
+    privileged: true  # <--- Added for root/privileged permissions
+    user: root        # <--- Ensures the user inside the container has access to the docker socket
     ports:
       - "8200:3000"
     environment:
@@ -16,13 +18,10 @@ services:
       BEAMMP_CONFIG_PATH: /beammp-data/ServerConfig.toml
       BEAMMP_RESOURCES_PATH: /beammp-data/Resources
       MAX_MOD_SIZE: 2048
-      # Docker socket access - automatically works on Docker Desktop (Windows/Mac/Linux)
-      # For native Windows Docker (Hyper-V), set DOCKER_HOST=npipe:////./pipe/docker_engine
       DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
     volumes:
       - ./data:/app/data
       - ./beammp-config:/beammp-data
-      # Docker socket - Docker Desktop automatically handles this on Windows/Mac/Linux
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - beammeup
@@ -55,7 +54,9 @@ services:
       test: ["CMD", "test", "-f", "/data/ServerConfig.toml"]
       interval: 5s
       timeout: 1s
-      retries: 120  # Wait up to 10 minutes for config file
+      retries: 120
+    networks:
+      - beammeup
 
 networks:
   beammeup:
