@@ -1,12 +1,13 @@
 services:
   # Backend API
- backend:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: beammeup-backend
     privileged: true
     user: root
+    # Since your stat was 0, we add '0' to the group list
     group_add:
       - "0"
     ports:
@@ -20,12 +21,12 @@ services:
       BEAMMP_CONFIG_PATH: /beammp-data/ServerConfig.toml
       BEAMMP_RESOURCES_PATH: /beammp-data/Resources
       MAX_MOD_SIZE: 2048
-      # Use BOTH of these to ensure the library finds the socket
+      # Force the backend to look at the exact socket path
       DOCKER_HOST: unix:///var/run/docker.sock
-      DOCKER_SOCK: /var/run/docker.sock
     volumes:
       - ./data:/app/data
       - ./beammp-config:/beammp-data
+      # Ensure the mount is read/write
       - /var/run/docker.sock:/var/run/docker.sock:rw
     networks:
       - beammeup
