@@ -6,6 +6,9 @@ services:
       dockerfile: Dockerfile
     container_name: beammeup-backend
     privileged: true
+    security_opt:
+      - apparmor:unconfined
+      - seccomp:unconfined
     user: root
     group_add:
       - "0"
