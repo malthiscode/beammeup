@@ -5,8 +5,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: beammeup-backend
-    privileged: true  # <--- Added for root/privileged permissions
-    user: root        # <--- Ensures the user inside the container has access to the docker socket
+    privileged: true
+    user: root
     ports:
       - "8200:3000"
     environment:
@@ -43,6 +43,8 @@ services:
   beammp:
     image: mbentley/beammp-server:latest
     container_name: beammp
+    user: root        # <--- Added: Forces the server to have write permissions
+    privileged: true  # <--- Added: Ensures it can manage its own files and network
     ports:
       - "30814:30814/tcp"
       - "30814:30814/udp"
