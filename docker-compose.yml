@@ -27,7 +27,7 @@ services:
       - ./data:/app/data
       - ./beammp-config:/beammp-data
       # Ensure the mount is read/write
-      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /home/umbrel/umbrel/app-data/portainer/data/docker/docker.sock:/var/run/docker.sock:rw
     networks:
       - beammeup
 
