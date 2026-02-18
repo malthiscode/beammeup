@@ -26,7 +26,7 @@ services:
       - beammeup_data:/app/data
       - beammp_config:/beammp-data
       # On force le chemin direct vers le socket de l'hôte
-      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /home/umbrel/umbrel/app-data/portainer/data/docker/docker.sock:/var/run/docker.sock:rw
     networks:
       - beammeup
 
