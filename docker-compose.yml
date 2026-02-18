@@ -7,9 +7,9 @@ services:
     container_name: beammeup-backend
     privileged: true
     user: root
-    # Since your stat was 0, we add '0' to the group list
     group_add:
       - "0"
+    restart: unless-stopped
     ports:
       - "8200:3000"
     environment:
@@ -21,13 +21,12 @@ services:
       BEAMMP_CONFIG_PATH: /beammp-data/ServerConfig.toml
       BEAMMP_RESOURCES_PATH: /beammp-data/Resources
       MAX_MOD_SIZE: 2048
-      # Force the backend to look at the exact socket path
       DOCKER_HOST: unix:///var/run/docker.sock
     volumes:
-      - ./data:/app/data
-      - ./beammp-config:/beammp-data
-      # Ensure the mount is read/write
-      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - beammeup_data:/app/data
+      - beammp_config:/beammp-data
+      # Utilisation du volume nommé pour le socket
+      - docker_sock:/var/run/docker.sock:rw
     networks:
       - beammeup
 
@@ -37,6 +36,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: beammeup-frontend
+    restart: unless-stopped
     ports:
       - "8201:3000"
     environment:
@@ -48,13 +48,14 @@ services:
   beammp:
     image: mbentley/beammp-server:latest
     container_name: beammp
-    user: root        # <--- Added: Forces the server to have write permissions
-    privileged: true  # <--- Added: Ensures it can manage its own files and network
+    user: root
+    privileged: true
+    restart: unless-stopped
     ports:
       - "30814:30814/tcp"
       - "30814:30814/udp"
     volumes:
-      - ./beammp-config:/data
+      - beammp_config:/data
     depends_on:
       - backend
     healthcheck:
@@ -68,3 +69,11 @@ services:
 networks:
   beammeup:
     driver: bridge
+
+volumes:
+  beammeup_data:
+  beammp_config:
+  # Déclaration cruciale pour Portainer sur Umbrel
+  docker_sock:
+    external: true
+    name: /var/run/docker.sock
