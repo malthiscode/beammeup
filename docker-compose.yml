@@ -25,8 +25,8 @@ services:
     volumes:
       - beammeup_data:/app/data
       - beammp_config:/beammp-data
-      # Utilisation du volume nommé pour le socket
-      - docker_sock:/var/run/docker.sock:rw
+      # On force le chemin direct vers le socket de l'hôte
+      - /var/run/docker.sock:/var/run/docker.sock:rw
     networks:
       - beammeup
 
@@ -73,7 +73,3 @@ networks:
 volumes:
   beammeup_data:
   beammp_config:
-  # Déclaration cruciale pour Portainer sur Umbrel
-  docker_sock:
-    external: true
-    name: /var/run/docker.sock
